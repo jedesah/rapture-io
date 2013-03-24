@@ -120,6 +120,15 @@ trait Net { this: BaseIo =>
 
     def schemeSpecificPart = "//"+hostname+(if(port == canonicalPort) "" else ":"+port)+pathString
 
+    /** Sends an HTTP put to this URL.
+      *
+      * @param content the content to put to the URL
+      * @param authenticate the username and password to provide for basic HTTP authentication,
+      *        defaulting to no authentication.
+      * @return the HTTP response from the remote host */
+    def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map()): ![HttpExceptions, HttpResponse] = post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")
+    
     /** Sends an HTTP post to this URL.
       *
       * @param content the content to post to the URL
@@ -127,7 +136,7 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def post[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map()):
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(), method: String = "POST"):
         ![HttpExceptions, HttpResponse] = except {
 
       val conn: URLConnection = new URL(toString).openConnection()
@@ -137,11 +146,11 @@ trait Net { this: BaseIo =>
             c.setSSLSocketFactory(sslContext.getSocketFactory)
             c.setHostnameVerifier(allHostsValid)
           }
-          c.setRequestMethod("POST")
+          c.setRequestMethod(method)
           c.setDoOutput(true)
           c.setUseCaches(false)
         case c: HttpURLConnection =>
-          c.setRequestMethod("POST")
+          c.setRequestMethod(method)
           c.setDoOutput(true)
           c.setUseCaches(false)
       }
