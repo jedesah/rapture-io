@@ -163,7 +163,7 @@ trait Net { this: BaseIo =>
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
       ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
-        implicitly[PostType[C]].sender(content) > out
+        implicitly[PostType[C]].sender(content) > unexcept(out)
       } (_.close())
 
       import scala.collection.JavaConversions._
