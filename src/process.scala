@@ -25,7 +25,9 @@ trait Processes { this: BaseIo =>
 
   private val runtime = Runtime.getRuntime
 
-  class Proc(val process: Process)
+  class Proc(val process: Process, name: String = "<process>") {
+    override def toString = name
+  }
 
   implicit class ExecStrings(sc: StringContext) extends {
     object sh {
@@ -44,11 +46,11 @@ trait Processes { this: BaseIo =>
     }
   }
 
-  implicit def procIsReadable(implicit enc: Encoding): StreamReader[Proc, Char] =
-    new StreamReader[Proc, Char] {
-      def input(proc: Proc): ![Exception, Input[Char]] =
-        except(inputStreamCharBuilder.input(proc.process.getInputStream))
-    }
+  implicit val procByteStreamReader =
+    new JavaInputStreamReader[Proc](_.process.getInputStream)
+
+  implicit val procByteStreamWriter =
+    new JavaOutputStreamWriter[Proc](_.process.getOutputStream)
 
   /** Convenience method for forking a block of code to a new thread */
   def fork(blk: => Unit): Thread = {

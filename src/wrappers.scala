@@ -44,10 +44,18 @@ trait LowPriorityWrappers { this: BaseIo =>
     def input(response: HttpResponse): ![Exception, Input[Byte]] = except(response.input[Byte])
   }
 
-  implicit val ProcIsReadable: StreamReader[Proc, Byte] = new StreamReader[Proc, Byte] {
+  implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {
+    def input(t: T): ![Exception, Input[Char]] = except(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
+  }
+
+  implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T], encoding: Encoding): StreamWriter[T, Char] = new StreamWriter[T, Char] {
+    def output(t: T): ![Exception, Output[Char]] = except(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+
+  /*implicit val ProcIsReadable: StreamReader[Proc, Byte] = new StreamReader[Proc, Byte] {
     def input(proc: Proc): ![Exception, Input[Byte]] =
       except(InputStreamBuilder.input(proc.process.getInputStream))
-  }
+  }*/
 }
 
 /** Provides wrappers around Java's standard stream classes: `InputStream`, `OutputStream`, `Reader`

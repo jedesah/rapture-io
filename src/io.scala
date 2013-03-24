@@ -42,7 +42,7 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
     Multipart with JsonExtraction with Encryption with Codecs with Digests with Encodings with
     Generation with Ips with Logging with Mime with Misc with Services with Time with Linking with
     Classpath with Processes with CommandLine with Tabulation with Exceptions with AnsiCodes with
-    Finance with Hex {
+    Finance with Hex with Ftp with Email {
 
   type ![_ <: Exception, _]
 
@@ -53,11 +53,10 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
   implicit def autoUnexcept[E <: Exception, T](t: ![E, T]): T = unexcept[E, T](t)
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
-  implicit object FileStreamByteReader extends StreamReader[FileUrl, Byte] {
-    def input(url: FileUrl): ![Exception, Input[Byte]] =
-      except[Exception, Input[Byte]](new ByteInput(new BufferedInputStream(
-          new FileInputStream(url.javaFile))))
-  }
+  implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f => new FileInputStream(f.javaFile))
+
+  /** Type class object for reading `Byte`s from `HttpUrl`s */
+  implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](_.javaConnection.getInputStream)
 
   /** Type class object for writing `Byte`s to `FileUrl`s */
   implicit object FileStreamByteWriter extends StreamWriter[FileUrl, Byte] {
@@ -70,10 +69,16 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
       except(new ByteOutput(new BufferedOutputStream(new FileOutputStream(url.javaFile, true))))
   }
 
-  /** Type class object for reading `Byte`s from `HttpUrl`s */
-  implicit object HttpStreamByteReader extends StreamReader[HttpUrl, Byte] {
-    def input(url: HttpUrl): ![Exception, Input[Byte]] =
-      except(new ByteInput(new BufferedInputStream(url.javaConnection.getInputStream)))
+  class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
+      StreamReader[T, Byte] {
+    def input(t: T): ![Exception, Input[Byte]] =
+      except(new ByteInput(new BufferedInputStream(getInputStream(t))))
+  }
+
+  class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
+      StreamWriter[T, Byte] {
+    def output(t: T): ![Exception, Output[Byte]] =
+      except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
   }
 
   implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
@@ -115,28 +120,12 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
   }
 
   object JavaResources {
+    import language.reflectiveCalls
     type StructuralReadable = { def getInputStream(): InputStream }
     type StructuralWritable = { def getOutputStream(): OutputStream }
     
-    implicit val structuralReader = new StreamReader[StructuralReadable, Byte] {
-      def input(res: StructuralReadable): ![Exception, Input[Byte]] =
-        except(new ByteInput(res.getInputStream()))
-    }
-    
-    implicit val structuralWriter = new StreamWriter[StructuralWritable, Byte] {
-      def output(res: StructuralWritable): ![Exception, Output[Byte]] =
-        except(new ByteOutput(res.getOutputStream()))
-    }
-    
-    implicit def structuralCharReader(implicit enc: Encoding) = new StreamReader[StructuralReadable, Char] {
-      def input(res: StructuralReadable): ![Exception, Input[Char]] =
-        except(new CharInput(new InputStreamReader(res.getInputStream())))
-    }
-    
-    implicit def structuralCharWriter(implicit enc: Encoding) = new StreamWriter[StructuralWritable, Char] {
-      def output(res: StructuralWritable): ![Exception, Output[Char]] =
-        except(new CharOutput(new OutputStreamWriter(res.getOutputStream())))
-    }
+    implicit val structuralReader = new JavaInputStreamReader[StructuralReadable](_.getInputStream())
+    implicit val structuralWriter = new JavaOutputStreamWriter[StructuralWritable](_.getOutputStream())
   }
 
 }
@@ -161,7 +150,6 @@ object iox extends BaseIo {
 }
 
 class Iof(implicit ec: ExecutionContext) extends BaseIo {
-
 
   type ![E <: Exception, T] = Future[T]
   @inline protected def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Future[T] =

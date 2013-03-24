@@ -102,7 +102,14 @@ trait Streams { this: BaseIo =>
     /** Gets the input for the resource specified in this URL */
     def input[Data](implicit sr: StreamReader[UrlType, Data]): ![Exception, Input[Data]] =
       except(sr.input(url))
-    
+   
+    /*def |[Data, DestUrlType](dest: DestUrlType)(implicit sr: StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]) = except {
+      handleInput[Data, Int] { in =>
+        makeWritable(dest).handleOutput[Data, Int](in > _)
+      }
+      dest
+    }*/
+
     /** Pumps the input for the specified resource to the destination URL provided */
     def >[Data, DestUrlType](dest: DestUrlType)(implicit sr:
         StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]):
@@ -110,6 +117,13 @@ trait Streams { this: BaseIo =>
       except(handleInput[Data, Int] { in =>
         makeWritable(dest).handleOutput[Data, Int](in > _)
       })
+    
+    def |[Data, DestUrlType](dest: DestUrlType)(implicit sr:
+        StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]):
+        DestUrlType = {
+          >(dest)
+          dest
+        }
  
     def >>[Data, DestUrlType](dest: DestUrlType)(implicit sr:
         StreamReader[UrlType, Data], sw: StreamAppender[DestUrlType, Data], mf: ClassTag[Data]):
@@ -217,13 +231,6 @@ trait Streams { this: BaseIo =>
         }
       case ce => ce
     }
-  }
-
-  /** Type class object for getting an Input[Char] from an HttpUrl */
-  implicit object HttpStreamCharReader extends StreamReader[HttpUrl, Char] {
-    def input(url: HttpUrl): ![Exception, Input[Char]] =
-      except(new CharInput(new BufferedReader(new InputStreamReader(
-          url.javaConnection.getInputStream, extractEncoding(url.javaConnection)))))
   }
 
   implicit object HttpResponseCharReader extends StreamReader[HttpResponse, Char] {

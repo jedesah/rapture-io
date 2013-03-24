@@ -42,12 +42,6 @@ trait Files { this: BaseIo =>
       except(new CharOutput(new BufferedWriter(new FileWriter(url.javaFile, true))))
   }
 
-  /** Type class object for reading `FileUrl`s as `Input[Stream]`s */
-  implicit object FileStreamCharReader extends StreamReader[FileUrl, Char] {
-    def input(url: FileUrl): ![Exception, Input[Char]] =
-      except(new CharInput(new BufferedReader(new FileReader(new java.io.File(url.pathString)))))
-  }
-
   /** The file scheme object used as a factory for FileUrls. */
   object File extends PathRoot[FileUrl] with Scheme[FileUrl] { thisPathRoot =>
 

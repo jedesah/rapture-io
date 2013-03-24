@@ -30,8 +30,8 @@ trait Mime {
     * http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types w*/
   object MimeTypes {
    
-    private val exts = new HashMap[String, List[MimeType]]
-    private val types = new HashMap[String, MimeType]
+    val exts = new HashMap[String, List[MimeType]]
+    val types = new HashMap[String, MimeType]
     
     def fromString(mt: String) = types.get(mt)
 
@@ -1892,5 +1892,10 @@ trait Mime {
     val `video/x-sgi-movie` = MimeType("video/x-sgi-movie", "movie")
     val `x-conference/x-cooltalk` = MimeType("x-conference/x-cooltalk", "ice")
     val `x-world/x-vrml` = MimeType("x-world/x-vrml", "vrm", "vrml", "wrl")
+  
+    val mimeTypesMap = new javax.activation.MimetypesFileTypeMap()
+    types.values foreach { t =>
+      mimeTypesMap.addMimeTypes(t.name+" "+t.extensions.mkString(" "))
+    }
   }
 }

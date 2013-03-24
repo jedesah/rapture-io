@@ -75,21 +75,13 @@ trait Sockets { this: BaseIo =>
       except(new ByteOutput(new BufferedOutputStream(url.javaSocket.getOutputStream)))
   }
 
-  implicit object SocketStreamByteReader extends StreamReader[SocketUri, Byte] {
-    def input(uri: SocketUri): ![Exception, Input[Byte]] =
-      except(new ByteInput(new BufferedInputStream(uri.javaSocket.getInputStream)))
-  }
+  implicit object SocketStreamByteReader extends JavaInputStreamReader[SocketUri](_.javaSocket.getInputStream)
   
   implicit def socketStreamCharWriter(implicit enc: Encoding) = new StreamWriter[SocketUri, Char] {
     def output(url: SocketUri): ![Exception, Output[Char]] =
       except(new CharOutput(new OutputStreamWriter(url.javaSocket.getOutputStream, enc.name)))
   }
 
-  implicit def socketStreamCharReader(implicit enc: Encoding) = new StreamReader[SocketUri, Char] {
-    def input(url: SocketUri): ![Exception, Input[Char]] =
-      except(new CharInput(new InputStreamReader(url.javaSocket.getInputStream, enc.name)))
-  }
-  
   implicit def socketStreamStringWriter(implicit enc: Encoding) = new StreamWriter[SocketUri, String] {
     def output(url: SocketUri): ![Exception, Output[String]] =
       except(new LineOutput(new OutputStreamWriter(url.javaSocket.getOutputStream, enc.name)))
