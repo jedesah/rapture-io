@@ -41,8 +41,8 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
     Extractors with Accumulators with Wrappers with Uris with Mail with CollectionExtras with
     Multipart with JsonExtraction with Encryption with Codecs with Digests with Encodings with
     Generation with Ips with Logging with Mime with Misc with Services with Time with Linking with
-    Classpath with Processes with CommandLine with Tabulation with Exceptions with Finance with Hex
-    with Ftp with Email with TestFramework {
+    Classpath with Processes with CommandLine with TableFormatting with Exceptions with Finance with
+    Hex with Ftp with Email with TestFramework {
 
   type ![_ <: Exception, _]
 
