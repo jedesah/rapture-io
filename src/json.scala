@@ -26,6 +26,11 @@ import language.dynamics
 /** Some useful JSON shortcuts */
 trait JsonExtraction { this: BaseIo =>
 
+  case class ParseException(source: String, line: Option[Int] = None, column: Option[Int] = None)
+      extends Exception {
+    override def toString = "Failed to parse source"
+  }
+
   /** Represents a JSON parser implementation which is used throughout this library */
   trait JsonParser {
     def parse(s: String): Option[Any]
@@ -94,7 +99,11 @@ trait JsonExtraction { this: BaseIo =>
   object Json {
 
     /** Parses a string containing JSON into a `Json` object */
-    def parse(s: String)(implicit jp: JsonParser): Json = new Json(jp.parse(s).get)
+    def parse(s: String)(implicit jp: JsonParser): ![ParseException, Json] = except {
+      new Json(try jp.parse(s).get catch {
+        case e: NoSuchElementException => throw new ParseException(s)
+      })
+    }
 
     /** Wraps a map into a JSON object */
     def apply(map: Map[String, Any]): Json = new Json(map)
