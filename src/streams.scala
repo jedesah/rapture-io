@@ -107,13 +107,6 @@ trait Streams { this: BaseIo =>
     def input[Data](implicit sr: StreamReader[UrlType, Data]): ![Exception, Input[Data]] =
       except(sr.input(url))
    
-    /*def |[Data, DestUrlType](dest: DestUrlType)(implicit sr: StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]) = except {
-      handleInput[Data, Int] { in =>
-        makeWritable(dest).handleOutput[Data, Int](in > _)
-      }
-      dest
-    }*/
-
     /** Pumps the input for the specified resource to the destination URL provided */
     def >[Data, DestUrlType](dest: DestUrlType)(implicit sr:
         StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]):
@@ -141,7 +134,7 @@ trait Streams { this: BaseIo =>
       * @tparam Data The type that the data should be pumped as
       * @param out The destination for data to be pumped to */
     def >[Data](out: Output[Data])(implicit sr: StreamReader[UrlType, Data],
-        mf: ClassTag[Data]): ![Exception, Int] = except(handleInput[Data, Int](_ > out))
+        mf: ClassTag[Data]): ![Exception, Int] = except(handleInput[Data, Int](_ pumpTo out))
 
     /** Carefully handles writing to the input stream, ensuring that it is closed following
       * data being written to the stream. Handling an input stream which is already being handled
