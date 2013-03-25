@@ -69,26 +69,7 @@ trait Sockets { this: BaseIo =>
     def apply(hostname: String, svc: TcpService): SocketUri = new SocketUri(hostname, svc.portNo)
   }
 
-  /** Type class object for getting an `Output[Byte]` from a socket URL. */
-  implicit object SocketStreamByteWriter extends StreamWriter[SocketUri, Byte] {
-    def output(url: SocketUri): ![Exception, Output[Byte]] =
-      except(new ByteOutput(new BufferedOutputStream(url.javaSocket.getOutputStream)))
-  }
-
   implicit object SocketStreamByteReader extends JavaInputStreamReader[SocketUri](_.javaSocket.getInputStream)
+  implicit object SocketStreamByteWriter extends JavaOutputStreamWriter[SocketUri](_.javaSocket.getOutputStream)
   
-  implicit def socketStreamCharWriter(implicit enc: Encoding) = new StreamWriter[SocketUri, Char] {
-    def output(url: SocketUri): ![Exception, Output[Char]] =
-      except(new CharOutput(new OutputStreamWriter(url.javaSocket.getOutputStream, enc.name)))
-  }
-
-  implicit def socketStreamStringWriter(implicit enc: Encoding) = new StreamWriter[SocketUri, String] {
-    def output(url: SocketUri): ![Exception, Output[String]] =
-      except(new LineOutput(new OutputStreamWriter(url.javaSocket.getOutputStream, enc.name)))
-  }
-
-  implicit def socketStreamStringReader(implicit enc: Encoding) = new StreamReader[SocketUri, String] {
-    def input(url: SocketUri): ![Exception, Input[String]] =
-      except(new LineInput(new InputStreamReader(url.javaSocket.getInputStream, enc.name)))
-  }
 }
