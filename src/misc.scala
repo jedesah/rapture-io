@@ -67,6 +67,12 @@ trait Misc { this: BaseIo =>
     def apply() = synchronized { n += 1; n }
   }
 
+  def repeat[T](blk: => T) = new { def until(test: T => Boolean) = {
+    var t: T = blk
+    while(!test(t)) t = blk
+    t
+  } }
+
   object load {
     def apply[C](implicit mf: scala.reflect.ClassTag[C]) = { mf.toString; () }
   }
