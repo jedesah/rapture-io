@@ -98,11 +98,13 @@ trait Encryption { this: BaseIo =>
 
     private val aesEnc = new AesEncryption { def secretKey = _secretKey }
 
+    protected val base64 = Base64
+
     def encrypt(string: String): String =
-      Base64.encode(aesEnc.encrypt(string.getBytes("UTF-8"))).mkString
+      base64.encode(aesEnc.encrypt(string.getBytes("UTF-8"))).mkString
     
     def decrypt(string: String): Option[String] =
-      aesEnc.decrypt(Base64.decode(string)).map(s => new String(s, "UTF-8"))
+      aesEnc.decrypt(base64.decode(string)).map(s => new String(s, "UTF-8"))
   }
 
   /** Shared implementation for AesInts and AesLongs. */
@@ -114,6 +116,8 @@ trait Encryption { this: BaseIo =>
     private val keySpec = new SecretKeySpec(secretKey, "AES")
 
     private val random = new SecureRandom
+
+    protected val base64 = Base64
 
     protected def encryptLong(clear: Long): String = {
       val salt = synchronized { random.nextInt() }
@@ -146,12 +150,12 @@ trait Encryption { this: BaseIo =>
 
       val out = cipher.doFinal(in)
       Arrays.fill(in, 0.toByte)
-      new String(Base64.encode(out, false, false))
+      new String(base64.encode(out, false, false))
     }
 
     protected def decryptLong(cipherText: String): Option[Long] =
       if(cipherText.length == 22) {
-        val in = Base64.decode(cipherText)
+        val in = base64.decode(cipherText)
         val cipher = Cipher.getInstance("AES/ECB/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, keySpec)
         val out = cipher.doFinal(in)
