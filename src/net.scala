@@ -243,15 +243,16 @@ trait Net { this: BaseIo =>
     private val UrlRegex = """(https?):\/\/([\.\-a-z0-9]+)(:[1-9][0-9]*)?\/?(.*)""".r
 
     /** Parses a URL string into an HttpUrl */
-    def parse(s: String): Option[HttpUrl] = s match {
+    def parse(s: String): ![Exception, HttpUrl] = except { s match {
       case UrlRegex(scheme, server, port, path) =>
         val rp = new SimplePath(path.split("/"), Map())
-        Some(scheme match {
+        scheme match {
           case "http" => Http./(server, if(port == null) 80 else port.substring(1).toInt) / rp
           case "https" => Https./(server, if(port == null) 443 else port.substring(1).toInt) / rp
-        })
-      case _ => None
-    }
+          case _ => throw new Exception
+        }
+      case _ => throw new Exception
+    } }
   }
 
   /** Factory for creating new HTTPS URLs */

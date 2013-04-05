@@ -98,7 +98,7 @@ trait Encryption { this: BaseIo =>
 
     private val aesEnc = new AesEncryption { def secretKey = _secretKey }
 
-    protected val base64 = Base64
+    protected val base64: Base64Codec = Base64
 
     def encrypt(string: String): String =
       base64.encode(aesEnc.encrypt(string.getBytes("UTF-8"))).mkString
@@ -117,7 +117,7 @@ trait Encryption { this: BaseIo =>
 
     private val random = new SecureRandom
 
-    protected val base64 = Base64
+    protected val base64: Base64Codec = Base64
 
     protected def encryptLong(clear: Long): String = {
       val salt = synchronized { random.nextInt() }
