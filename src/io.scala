@@ -81,6 +81,12 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
       except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
   }
 
+  class JavaOutputStreamAppender[T](val getOutputStream: T => OutputStream) extends
+      StreamAppender[T, Byte] {
+    def appendOutput(t: T): ![Exception, Output[Byte]] =
+      except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  }
+
   implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
     def output(stdout: Stdout[Data]): ![Exception, Output[Data]] =
@@ -121,11 +127,24 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
 
   object JavaResources {
     import language.reflectiveCalls
+    
     type StructuralReadable = { def getInputStream(): InputStream }
     type StructuralWritable = { def getOutputStream(): OutputStream }
     
-    implicit val structuralReader = new JavaInputStreamReader[StructuralReadable](_.getInputStream())
-    implicit val structuralWriter = new JavaOutputStreamWriter[StructuralWritable](_.getOutputStream())
+    implicit val structuralReader =
+      new JavaInputStreamReader[StructuralReadable](_.getInputStream())
+    
+    implicit val structuralWriter =
+      new JavaOutputStreamWriter[StructuralWritable](_.getOutputStream())
+  
+    implicit val javaFileReader = new JavaInputStreamReader[java.io.File](f =>
+        new java.io.FileInputStream(f))
+    
+    implicit val javaFileWriter = new JavaOutputStreamWriter[java.io.File](f =>
+        new java.io.FileOutputStream(f))
+    
+    implicit val javaFileAppender = new JavaOutputStreamAppender[java.io.File](f =>
+        new java.io.FileOutputStream(f, true))
   }
 
 }
