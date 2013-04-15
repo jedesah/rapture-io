@@ -22,6 +22,7 @@ License.
 package rapture
 
 import language.dynamics
+import scala.collection.mutable.{ListBuffer, HashMap}
 
 /** Some useful JSON shortcuts */
 trait JsonExtraction { this: BaseIo =>
@@ -34,6 +35,16 @@ trait JsonExtraction { this: BaseIo =>
   /** Represents a JSON parser implementation which is used throughout this library */
   trait JsonParser {
     def parse(s: String): Option[Any]
+    def parseMutable(s: String): Option[Any] = try Some(yCombinator[Any, Any] { fn =>
+      _ match {
+        case m: Map[String, Any] =>
+          val hm = HashMap[String, Any](m.to[List]: _*)
+          for(k <- hm.keys) hm(k) = fn(hm(k))
+          hm
+        case lst: List[_] => ListBuffer(lst.map(fn): _*)
+        case x => x
+      }
+    } (parse(s).get)) catch { case e: Exception => None }
   }
   
   /** The default JSON parser implementation */
@@ -105,6 +116,12 @@ trait JsonExtraction { this: BaseIo =>
       })
     }
 
+    def parseMutable(s: String)(implicit jp: JsonParser): ![ParseException, MutableJson] = except {
+      new MutableJson(try jp.parseMutable(s).get catch {
+        case e: NoSuchElementException => throw new ParseException(s)
+      })
+    }
+
     /** Wraps a map into a JSON object */
     def apply(map: Map[String, Any]): Json = new Json(map)
 
@@ -117,10 +134,10 @@ trait JsonExtraction { this: BaseIo =>
     def format(json: Option[Any], ln: Int): String = {
       val indent = " "*ln
       json match {
-        case Some(o: Map[_, _]) =>
+        case Some(o: scala.collection.Map[_, _]) =>
           List("{", o.keys map { k => indent+" "+"\""+k+"\": "+format(o.get(k), ln + 1) } mkString
               ",\n", indent+"}").mkString("\n")
-        case Some(a: List[_]) =>
+        case Some(a: Seq[_]) =>
           List("[", a map { v => indent+" "+format(Some(v), ln + 1) } mkString(",\n"),
               indent+"]") mkString "\n"
         case Some(s: String) =>
@@ -130,6 +147,7 @@ trait JsonExtraction { this: BaseIo =>
         case Some(n: Number) => n.toString
         case Some(v: Boolean) => if(v) "true" else "false"
         case Some(j: Json) => format(Some(j.json), ln)
+        case Some(j: MutableJson) => format(Some(j.json), ln)
         case None => "null"
         case _ => "undefined"
       }
@@ -184,7 +202,7 @@ trait JsonExtraction { this: BaseIo =>
     def selectDynamic(key: String): Json =
       new Json(if(json == null) null else json.asInstanceOf[Map[String, Any]].get(key).getOrElse(
           null))
-    
+   
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit jsonExtractor: JsonExtractor[T]): ![Exception, T] =
       except(jsonExtractor.cast(json))
@@ -194,6 +212,42 @@ trait JsonExtraction { this: BaseIo =>
 
     /** Assumes the Json object is wrapping a List, and returns an iterator over the list */
     def iterator: Iterator[Json] = json.asInstanceOf[List[Json]].iterator
+
+    override def toString = Json.format(Some(json), 0)
+  }
+
+  class MutableJson(private[JsonExtraction] val json: Any) extends Dynamic {
+    def updateDynamic(key: String)(v: Any): Unit = json.asInstanceOf[HashMap[String, Any]](key) = v
+   
+    def update(i: Int, v: Any) = json.asInstanceOf[ListBuffer[Any]](i) = v
+
+    /** Assumes the Json object is wrapping a List, and extracts the `i`th element from the list */
+    def apply(i: Int): MutableJson =
+      new MutableJson(if(json == null) null else json.asInstanceOf[ListBuffer[Any]](i))
+   
+    /** Combines a `selectDynamic` and an `apply`.  This is necessary due to the way dynamic
+      * application is expanded. */
+    def applyDynamic(key: String)(i: Int): MutableJson = selectDynamic(key).apply(i)
+    
+    /** Navigates the JSON using the `SimplePath` parameter, and returns the element at that
+      * position in the tree. */
+    def extract(sp: SimplePath): MutableJson =
+      if(sp == ^) this else selectDynamic(sp.head).extract(sp.tail)
+    
+    /** Assumes the Json object wraps a `Map`, and extracts the element `key`. */
+    def selectDynamic(key: String): MutableJson =
+      new MutableJson(if(json == null) null else json.asInstanceOf[HashMap[String, Any]].get(key).
+          getOrElse(null))
+   
+    /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
+    def get[T](implicit jsonExtractor: JsonExtractor[T]): ![Exception, T] =
+      except(jsonExtractor.cast(json))
+
+    /** Assumes the Json object is wrapping a List, and returns the length */
+    def length = json.asInstanceOf[ListBuffer[Json]].length
+
+    /** Assumes the Json object is wrapping a List, and returns an iterator over the list */
+    def iterator: Iterator[MutableJson] = json.asInstanceOf[ListBuffer[MutableJson]].iterator
 
     override def toString = Json.format(Some(json), 0)
   }
