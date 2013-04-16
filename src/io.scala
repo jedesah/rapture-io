@@ -64,6 +64,12 @@ abstract class BaseIo extends Paths with Streams with Urls with Files with Net w
       except(new ByteOutput(new BufferedOutputStream(new FileOutputStream(url.javaFile))))
   }
 
+  implicit val procByteStreamReader =
+    new JavaInputStreamReader[Proc](_.process.getInputStream)
+
+  implicit val procByteStreamWriter =
+    new JavaOutputStreamWriter[Proc](_.process.getOutputStream)
+
   implicit object FileStreamByteAppender extends StreamAppender[FileUrl, Byte] {
     def appendOutput(url: FileUrl): ![Exception, Output[Byte]] =
       except(new ByteOutput(new BufferedOutputStream(new FileOutputStream(url.javaFile, true))))

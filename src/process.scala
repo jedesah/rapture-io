@@ -46,12 +46,6 @@ trait Processes { this: BaseIo =>
     }
   }
 
-  implicit val procByteStreamReader =
-    new JavaInputStreamReader[Proc](_.process.getInputStream)
-
-  implicit val procByteStreamWriter =
-    new JavaOutputStreamWriter[Proc](_.process.getOutputStream)
-
   /** Convenience method for forking a block of code to a new thread */
   def fork(blk: => Unit): Thread = {
     val th = new Thread {

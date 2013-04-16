@@ -7,9 +7,28 @@ import scala.xml._
 
 trait Email { this: BaseIo =>
 
+  case class EmailAddress(email: String, name: String = "") {
+    override def toString = if(name == "") email else s""""${name}" <${email}>"""
+  }
+
   object Smtp extends Scheme[Smtp] {
     def /(hostname: String) = new Smtp(hostname)
     def schemeName = "smtp"
+  }
+
+  trait Mailable[T] { def content(t: T): String }
+
+  implicit def stringToEmail(s: String): EmailAddress = EmailAddress(s)
+
+  implicit object StringMailable extends Mailable[String] {
+    def content(t: String) = t
+  }
+
+  trait AddressedMailable[T] extends Mailable[T] {
+    def sender(t: T): EmailAddress
+    def recipients(t: T): List[EmailAddress]
+    def ccRecipients(t: T): List[EmailAddress] = Nil
+    def subject(t: T): String
   }
 
   class Smtp(val hostname: String) extends Uri {
@@ -17,9 +36,21 @@ trait Email { this: BaseIo =>
     def schemeSpecificPart = s"//${hostname}"
     def absolute = true
 
-    def email(from: String, to: Seq[String], cc: Seq[String], subject: String,
+    def sendTo[Mail: Mailable](sender: EmailAddress, recipients: Seq[EmailAddress],
+        ccRecipients: Seq[EmailAddress] = Nil, subject: String, mail: Mail): Unit = {
+      sendmail(sender.toString, recipients.map(_.toString), ccRecipients.map(_.toString), subject,
+          implicitly[Mailable[Mail]].content(mail), None, Nil)
+    }
+
+    def send[Mail: AddressedMailable](mail: Mail) = {
+      val am = implicitly[AddressedMailable[Mail]]
+      sendmail(am.sender(mail).toString, am.recipients(mail).map(_.toString),
+          am.ccRecipients(mail).map(_.toString), am.subject(mail), am.content(mail), None, Nil)
+    }
+
+    def sendmail(from: String, to: Seq[String], cc: Seq[String], subject: String,
         bodyText: String, bodyHtml: Option[(String, Seq[(String, String)])],
-        attachments: Seq[(String, String, String)]) = {
+        attachments: Seq[(String, String, String)]): Unit = {
     
       val props = System.getProperties()
       props.put("mail.smtp.host", hostname)

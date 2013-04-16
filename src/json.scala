@@ -168,15 +168,15 @@ trait JsonExtraction { this: BaseIo =>
     implicit val anyJsonExtractor = new JsonExtractor[Any](identity)
     
     implicit def listJsonExtractor[T: JsonExtractor] =
-      new JsonExtractor[List[T]](_.asInstanceOf[List[Any]].map(implicitly[JsonExtractor[T]].cast))
+      new JsonExtractor[List[T]](_.asInstanceOf[Seq[Any]].to[List].map(implicitly[JsonExtractor[T]].cast))
     
     implicit def optionJsonExtractor[T: JsonExtractor] =
       new JsonExtractor[Option[T]](x => if(x == null) None else Some(x.asInstanceOf[Any]).map(
           implicitly[JsonExtractor[T]].cast))
     
     implicit def mapJsonExtractor[T: JsonExtractor] =
-      new JsonExtractor[Map[String, T]](_.asInstanceOf[Map[String, Any]].mapValues(
-          implicitly[JsonExtractor[T]].cast))
+      new JsonExtractor[Map[String, T]](_.asInstanceOf[scala.collection.Map[String, Any]].
+          toMap.mapValues(implicitly[JsonExtractor[T]].cast))
   }
 
   @annotation.implicitNotFound("Cannot extract type ${T} from JSON.")
