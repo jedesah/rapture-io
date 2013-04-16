@@ -37,8 +37,8 @@ trait JsonExtraction { this: BaseIo =>
     def parse(s: String): Option[Any]
     def parseMutable(s: String): Option[Any] = try Some(yCombinator[Any, Any] { fn =>
       _ match {
-        case m: Map[String, Any] =>
-          val hm = HashMap[String, Any](m.to[List]: _*)
+        case m: Map[_, _] =>
+          val hm = HashMap[String, Any](m.asInstanceOf[Map[String, Any]].to[List]: _*)
           for(k <- hm.keys) hm(k) = fn(hm(k))
           hm
         case lst: List[_] => ListBuffer(lst.map(fn): _*)
@@ -217,9 +217,17 @@ trait JsonExtraction { this: BaseIo =>
   }
 
   class MutableJson(private[JsonExtraction] val json: Any) extends Dynamic {
+    /** Updates the element `key` of the JSON object with the value `v` */
     def updateDynamic(key: String)(v: Any): Unit = json.asInstanceOf[HashMap[String, Any]](key) = v
    
-    def update(i: Int, v: Any) = json.asInstanceOf[ListBuffer[Any]](i) = v
+    /** Updates the `i`th element of the JSON array with the value `v` */
+    def update(i: Int, v: Any): Unit = json.asInstanceOf[ListBuffer[Any]](i) = v
+
+    /** Removes the specified key from the JSON object */
+    def -=(k: String): Unit = json.asInstanceOf[HashMap[String, Any]].remove(k)
+
+    /** Adds the specified value to the JSON array */
+    def +=(v: Any): Unit = json.asInstanceOf[ListBuffer[Any]] += v
 
     /** Assumes the Json object is wrapping a List, and extracts the `i`th element from the list */
     def apply(i: Int): MutableJson =
