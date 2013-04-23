@@ -188,7 +188,7 @@ trait Net { this: BaseIo =>
       }).mkString("&")) -> 1.0))
   }
 
-  implicit object PageIdentifier extends QueryType[HttpUrl, Symbol] {
+  implicit object PageIdentifier extends QueryType[Path[_], Symbol] {
     def extras(existing: AfterPath, q: Symbol): AfterPath =
       existing + ('#' -> (q.name -> 2.0))
   }

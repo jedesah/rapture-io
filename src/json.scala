@@ -160,6 +160,7 @@ trait JsonExtraction { this: BaseIo =>
   object JsonExtractor {
     
     implicit val noopExtractor = new JsonExtractor[Json](x => new Json(x))
+    implicit val noopExtractor2 = new JsonExtractor[MutableJson](x => new MutableJson(x))
     implicit val stringJsonExtractor = new JsonExtractor[String](_.asInstanceOf[String])
     implicit val doubleJsonExtractor = new JsonExtractor[Double](_.asInstanceOf[Double])
     implicit val intJsonExtractor = new JsonExtractor[Int](_.asInstanceOf[Double].toInt)
