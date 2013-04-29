@@ -24,7 +24,7 @@ import rapture._
 
 import scala.collection.mutable.ListBuffer
 
-trait TestFramework {
+trait TestFramework extends CommandLineExtras {
 
   trait TestApp {
     private val suites = new ListBuffer[Suite]
