@@ -1,4 +1,5 @@
-package rapture
+package rapture.implementation
+import rapture._
 
 trait Hex { this: BaseIo =>
 

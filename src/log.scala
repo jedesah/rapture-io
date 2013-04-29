@@ -19,7 +19,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 ***************************************************************************************************/
 
-package rapture
+package rapture.implementation
+import rapture._
 
 // Rewrite using actors
 trait Logging { logging: BaseIo =>

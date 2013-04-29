@@ -1,4 +1,5 @@
-package rapture
+package rapture.implementation
+import rapture._
 
 import javax.mail._
 import javax.mail.internet._

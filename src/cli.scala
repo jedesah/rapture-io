@@ -19,7 +19,8 @@ implied. See the License for the specific language governing permissions and lim
 License.
 ***************************************************************************************************/
 
-package rapture
+package rapture.implementation
+import rapture._
 
 import scala.collection.immutable.{Queue, ListMap}
 import scala.collection.mutable.HashMap

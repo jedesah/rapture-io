@@ -21,6 +21,8 @@ License.
 
 package rapture
 
+import implementation._
+
 import language.implicitConversions
 import language.higherKinds
 
