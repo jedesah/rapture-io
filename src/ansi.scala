@@ -1,10 +1,10 @@
 /**************************************************************************************************
-Rapture Test Library
-Version 0.5.0
+Rapture I/O Library
+Version 0.7.2
 
 The primary distribution site is
 
-  http://rapture.io/
+  http://www.propensive.com/
 
 Copyright 2010-2013 Propensive Ltd.
 
