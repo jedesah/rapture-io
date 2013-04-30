@@ -180,13 +180,26 @@ trait Files { this: BaseIo =>
     def renameTo(dest: FileUrl): Boolean = javaFile.renameTo(dest.javaFile)
     
     /** Copies this file to a new location specified by the dest parameter. */
-    def copyTo(dest: FileUrl)(implicit sr: StreamReader[FileUrl, Byte]): Boolean =
-      sr.pump(this, dest) > 0
+    def copyTo(dest: FileUrl, overwrite: Boolean = true, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte]): ![Exception, Int] = except {
+      if(dest.exists) {
+        if(isFile && !dest.isFile) throw new Exception("Cannot copy a file onto a directory")
+        else if(!isFile && dest.isFile) throw new Exception("Cannot copy a directory onto a file")
+        else if(!overwrite) throw new Exception("Destination already exists")
+        else if(isFile) sr.pump(this, dest)
+        else if(!recursive) throw new Exception("Cannot copy directory")
+        else NavigableFile.children(this).foldLeft(0) { (c, f) => c + f.copyTo(dest / f.filename, overwrite, recursive) }
+      } else {
+        if(isFile) sr.pump(this, dest) else {
+          dest.mkdir()
+          NavigableFile.children(this).foldLeft(0) { (c, f) => c + f.copyTo(dest / f.filename, overwrite, recursive) }
+        }
+      }
+    }
     
     /** Moves this file to a new location specified by the dest parameter. This will first attempt
       * to move the file by renaming it, but will attempt copying and deletion if renaming fails. */
     def moveTo(dest: FileUrl): ![Exception, Boolean] =
-      except(renameTo(dest) || copyTo(dest) && delete())
+      except(renameTo(dest) || (copyTo(dest) > 0) && delete())
 
     /** Update the last-modified time of this file to the current time. */
     def touch() = lastModified = new java.util.Date
