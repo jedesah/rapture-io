@@ -152,9 +152,9 @@ trait Files { this: BaseIo =>
     def hidden: Boolean = if(exists) javaFile.isHidden() else throw NotFound()
    
     /** Returns the date of the last modification to the file or directory. */
-    def lastModified: ![NotFoundExceptions, java.util.Date] = except(javaFile.lastModified() match {
+    def lastModified: ![NotFoundExceptions, Time.DateTime] = except(javaFile.lastModified() match {
       case 0L => throw NotFound()
-      case d => new java.util.Date(d)
+      case d => Time.DateTime.unapply(d).get
     })
     
     /** Returns the size of the file in bytes. */
@@ -180,7 +180,7 @@ trait Files { this: BaseIo =>
     def renameTo(dest: FileUrl): Boolean = javaFile.renameTo(dest.javaFile)
     
     /** Copies this file to a new location specified by the dest parameter. */
-    def copyTo(dest: FileUrl, overwrite: Boolean = true, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte]): ![Exception, Int] = except {
+    def copyTo(dest: FileUrl, overwrite: Boolean = false, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte]): ![Exception, Int] = except {
       if(dest.exists) {
         if(isFile && !dest.isFile) throw new Exception("Cannot copy a file onto a directory")
         else if(!isFile && dest.isFile) throw new Exception("Cannot copy a directory onto a file")
@@ -202,10 +202,10 @@ trait Files { this: BaseIo =>
       except(renameTo(dest) || (copyTo(dest) > 0) && delete())
 
     /** Update the last-modified time of this file to the current time. */
-    def touch() = lastModified = new java.util.Date
+    def touch() = javaFile.setLastModified(Time.now().toLong)
 
     /** Set the last modified time of this file or directory. */
-    def lastModified_=(d: java.util.Date) = javaFile.setLastModified(d.getTime)
+    def lastModified_=(d: Time.DateTime) = javaFile.setLastModified(d.toLong)
     
     /** Extract the file extension from the name of this file. */
     def extension: ![Exception, Option[String]] =
