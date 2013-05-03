@@ -87,8 +87,8 @@ trait Files { this: BaseIo =>
       * otherwise returns the empty iterator. */
     def descendants(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
       eh.except {
-        children(url)(ThrowExceptions).iterator.flatMap { c =>
-          if(isDirectory(c)(ThrowExceptions)) Iterator(c) ++ descendants(c)(ThrowExceptions)
+        children(url).iterator.flatMap { c =>
+          if(isDirectory(c)) Iterator(c) ++ descendants(c)
           else Iterator(c)
         }
       }
@@ -101,11 +101,11 @@ trait Files { this: BaseIo =>
     
     /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
     def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
-      implicitly[Navigable[UrlType]].isDirectory(url)
+      eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(strategy.ThrowExceptions))
 
     /** Return an iterator of all descendants of this URL. */
     def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
-      implicitly[Navigable[UrlType]].descendants(url)
+      eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.ThrowExceptions))
   }
 
   /** Specifies how file: URLs should be navigable. */
@@ -171,7 +171,8 @@ trait Files { this: BaseIo =>
       })
     
     /** Returns the size of the file in bytes. */
-    def size(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Long] = length
+    def size(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Long] =
+      eh.except(length(strategy.ThrowExceptions))
     
     /** Creates a new instance of this type of URL. */
     def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath): FileUrl =
@@ -188,7 +189,6 @@ trait Files { this: BaseIo =>
     
     /** Copies this file to a new location specified by the dest parameter. */
     def copyTo(dest: FileUrl, overwrite: Boolean = false, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte], eh: ExceptionHandler): eh.![Exception, Int] = eh.except {
-      implicit val exceptionHandler = ThrowExceptions
       if(dest.exists) {
         if(isFile && !dest.isFile) throw new Exception("Cannot copy a file onto a directory")
         else if(!isFile && dest.isFile) throw new Exception("Cannot copy a directory onto a file")
@@ -212,7 +212,7 @@ trait Files { this: BaseIo =>
       * to move the file by renaming it, but will attempt copying and deletion if renaming fails. */
     def moveTo(dest: FileUrl)(implicit sr: StreamReader[FileUrl, Byte], eh: ExceptionHandler):
         eh.![Exception, Boolean] =
-      eh.except(renameTo(dest) || (copyTo(dest)(sr, ThrowExceptions) > 0) && delete()(ThrowExceptions))
+      eh.except(renameTo(dest) || (copyTo(dest) > 0) && delete())
 
     /** Update the last-modified time of this file to the current time. */
     def touch() = javaFile.setLastModified(Time.now().toLong)
@@ -233,10 +233,10 @@ trait Files { this: BaseIo =>
       eh.except(File(java.io.File.createTempFile(prefix, suffix, javaFile)))
     
     private def deleteRecursively(): Boolean = {
-      if(NavigableFile.isDirectory(this)(ThrowExceptions))
-        NavigableFile.children(this)(ThrowExceptions).foreach(_.deleteRecursively())
+      if(NavigableFile.isDirectory(this))
+        NavigableFile.children(this).foreach(_.deleteRecursively())
       
-      delete()(ThrowExceptions)
+      delete()
     }
   }
 }

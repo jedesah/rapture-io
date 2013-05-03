@@ -43,7 +43,9 @@ trait LowerPriorityWrappers { this: BaseIo =>
 }
 
 trait LowPriorityWrappers extends LowerPriorityWrappers { this: BaseIo =>
-  
+ 
+  implicit val defaultExceptionHandler = strategy.ThrowExceptions
+
   /** Type class object for creating an Input[Byte] from a Java InputStream */
   implicit object InputStreamBuilder extends InputBuilder[InputStream, Byte] {
     def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] = eh.except(new ByteInput(s))
@@ -56,7 +58,7 @@ trait LowPriorityWrappers extends LowerPriorityWrappers { this: BaseIo =>
 
   implicit object HttpResponseByteReader extends StreamReader[HttpResponse, Byte] {
     def input(response: HttpResponse)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-      response.input[Byte]
+      eh.except(response.input[Byte](implicitly[InputBuilder[InputStream, Byte]], strategy.ThrowExceptions))
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {

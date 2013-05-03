@@ -25,8 +25,6 @@ import rapture.io._
 
 object Tests extends TestApp {
 
-  implicit val exceptionStrategy = rapture.ThrowExceptions
-
   val generators = new Suite("generators.scala") {
 
     val stopOnZero = test {

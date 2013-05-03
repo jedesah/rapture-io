@@ -34,7 +34,6 @@ trait Extractors { this: BaseIo =>
   object Xml {
     
     def unapply(in: Input[Char]): Option[Seq[scala.xml.Node]] = try {
-      implicit val exceptionHandler = ThrowExceptions
       val so = new StringOutput
       in > so
       unapply(so.buffer)

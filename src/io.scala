@@ -33,38 +33,8 @@ import scala.concurrent.duration._
 import java.io._
 import java.net._
 
-trait ExceptionHandler {
-  
-  type ![_ <: Exception, _]
+import annotation.implicitNotFound
 
-  def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): ![E, T]
-  def unexcept[E <: Exception, T](t: => ![E, T]): T
-
-}
-
-object ThrowExceptions extends ExceptionHandler {
-  
-  type ![E <: Exception, T] = T
-  
-  def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): T = t
-  def unexcept[E <: Exception, T](t: => T): T = t
-
-}
-
-object ReturnEither extends ExceptionHandler {
-  
-  type ![E <: Exception, T] = Either[E, T]
-  
-  def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Either[E, T] =
-    try Right(t) catch {
-      case e: E => Left(e)
-      case e: Throwable => throw e
-    }
-  
-  def unexcept[E <: Exception, T](t: => Either[E, T]): T =
-    t.right.getOrElse(throw t.left.get)
-
-}
 /** Combines different elements of the I/O framework.  This class provides implementations of
   * type class objects which should be given higher priority than the defaults.  This allows
   * methods which stream from URLs which have alternative means of being read to favour one type
@@ -77,6 +47,33 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
     Generation with Ips with Logging with Mime with Misc with Services with Time with Linking with
     Classpath with Processes with CommandLine with TableFormatting with Exceptions with Finance with
     Hex with Ftp with Email with TestFramework {
+
+  @implicitNotFound(msg = "No exception handler was available. Please import ")
+  trait ExceptionHandler {
+  
+    type ![_ <: Exception, _]
+
+    def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): ![E, T]
+  }
+
+  object strategy {
+    implicit object ThrowExceptions extends ExceptionHandler {
+      type ![E <: Exception, T] = T
+      
+      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): T = t
+    }
+
+    implicit object ReturnEither extends ExceptionHandler {
+      type ![E <: Exception, T] = Either[E, T]
+      
+      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Either[E, T] =
+        try Right(t) catch {
+          case e: E => Left(e)
+          case e: Throwable => throw e
+        }
+      
+    }
+  }
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f => new FileInputStream(f.javaFile))
@@ -122,19 +119,19 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
   implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
     def output(stdout: Stdout[Data])(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except[Exception, Output[Data]](stdout.output(ThrowExceptions))
+      eh.except[Exception, Output[Data]](stdout.output)
   }
 
   implicit def stderrWriter[Data] = new StreamWriter[Stderr[Data], Data] {
     override def doNotClose = true
     def output(stderr: Stderr[Data])(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except[Exception, Output[Data]](stderr.output(ThrowExceptions))
+      eh.except[Exception, Output[Data]](stderr.output)
   }
 
   implicit def stdin[Data] = new StreamReader[Stdin[Data], Data] {
     override def doNotClose = true
     def input(stdin: Stdin[Data])(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]] =
-      eh.except[Exception, Input[Data]](stdin.input(ThrowExceptions))
+      eh.except[Exception, Input[Data]](stdin.input)
   }
 
   implicit class urlCodec(s: String) {
@@ -188,7 +185,4 @@ object io extends BaseIo
   type ![E <: Exception, T] = Future[T]
   @inline protected def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Future[T] =
     Future { t }
-  
-  @inline protected def unexcept[E <: Exception, T](t: => Future[T]): T =
-    Await.result(t, Duration.Inf)
 }*/

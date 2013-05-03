@@ -46,17 +46,17 @@ trait Streams { this: BaseIo =>
 
   case class Stdout[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
     def output(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except(outputBuilder.output(System.out)(ThrowExceptions))
+      eh.except(outputBuilder.output(System.out))
   }
 
   case class Stderr[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
     def output(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except(outputBuilder.output(System.err)(ThrowExceptions))
+      eh.except(outputBuilder.output(System.err))
   }
   
   case class Stdin[Data](implicit inputBuilder: InputBuilder[InputStream, Data]) {
     def input(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]] =
-      eh.except(inputBuilder.input(System.in)(ThrowExceptions))
+      eh.except(inputBuilder.input(System.in))
   }
 
   /** Makes a `String` viewable as an `rapture.io.Input[Char]` */
@@ -94,7 +94,6 @@ trait Streams { this: BaseIo =>
     
     def handleAppend[Data, Result](body: Output[Data] => Result)(implicit sw:
         StreamAppender[UrlType, Data]): Result = {
-      implicit val exceptionHandler = ThrowExceptions
       ensuring(appendOutput[Data])(body) { out =>
         out.flush()
         if(!sw.doNotClose) out.close()
@@ -114,7 +113,7 @@ trait Streams { this: BaseIo =>
     
     /** Gets the input for the resource specified in this URL */
     def input[Data](implicit sr: StreamReader[UrlType, Data], eh: ExceptionHandler):
-      eh.![Exception, Input[Data]] = eh.except(sr.input(url)(ThrowExceptions))
+      eh.![Exception, Input[Data]] = eh.except(sr.input(url))
    
     /** Pumps the input for the specified resource to the destination URL provided */
     def >[Data, DestUrlType](dest: DestUrlType)(implicit sr:
@@ -127,7 +126,6 @@ trait Streams { this: BaseIo =>
     def |[Data, DestUrlType](dest: DestUrlType)(implicit sr:
         StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]):
         DestUrlType = {
-          implicit val exceptionHandler = ThrowExceptions
           >(dest)
           dest
         }
@@ -157,20 +155,18 @@ trait Streams { this: BaseIo =>
     def handleInput[Data, Result](body: Input[Data] => Result)(implicit sr:
         StreamReader[UrlType, Data]): Result = {
      
-      ensuring(input[Data](sr, ThrowExceptions))(body) { in => if(!sr.doNotClose) in.close() }
+      ensuring(input[Data])(body) { in => if(!sr.doNotClose) in.close() }
     }
 
     // FIXME: Don't slurp the whole stream just to create the MD5 sum
     def md5Sum()(implicit sr: StreamReader[UrlType, Byte], eh: ExceptionHandler):
       eh.![Exception, String] = eh.except {
-        implicit val exceptionHandler = ThrowExceptions
         Md5.digestHex(slurp[Byte]())
       }
 
     // FIXME: Don't slurp the whole stream just to create the MD5 sum
     def sha256Sum()(implicit sr: StreamReader[UrlType, Byte], eh: ExceptionHandler):
       eh.![Exception, String] = eh.except {
-        implicit val exceptionHandler = ThrowExceptions
         Sha256.digestHex(slurp[Byte]())
       }
 
@@ -185,7 +181,6 @@ trait Streams { this: BaseIo =>
         AccumulatorBuilder[Data], eh: ExceptionHandler, mf: ClassTag[Data]):
         eh.![Exception, accumulatorBuilder.Out] =
       eh.except {
-        implicit val exceptionHandler = ThrowExceptions
         val c = accumulatorBuilder.make()
         input[Data] pumpTo c
 
@@ -203,7 +198,7 @@ trait Streams { this: BaseIo =>
       *
       * @tparam Data The type of data to be carried by the `Output` */
     def output[Data](implicit sw: StreamWriter[UrlType, Data], eh: ExceptionHandler):
-        eh.![Exception, Output[Data]] = eh.except(sw.output(url)(ThrowExceptions))
+        eh.![Exception, Output[Data]] = eh.except(sw.output(url))
     
     /** Carefully handles writing to the output stream, ensuring that it is closed following
       * data being written.
@@ -212,7 +207,7 @@ trait Streams { this: BaseIo =>
       * @return The result from executing the body */
     def handleOutput[Data, Result](body: Output[Data] => Result)(implicit sw:
         StreamWriter[UrlType, Data]): Result =
-      ensuring(output[Data](sw, ThrowExceptions))(body) { out =>
+      ensuring(output[Data])(body) { out =>
         out.flush()
         if(!sw.doNotClose) out.close()
       }
@@ -253,7 +248,6 @@ trait Streams { this: BaseIo =>
     def input(response: HttpResponse)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
       eh.except {
         implicit val enc = Encodings.`UTF-8`
-        implicit val exceptionHandler = ThrowExceptions
         response.input[Char]
       }
   }
@@ -449,7 +443,7 @@ trait Streams { this: BaseIo =>
     /** Pumps data from the specified URL to the given destination URL */
     def pump[DestUrlType <: Url[DestUrlType]](url: UrlType, dest: DestUrlType)(implicit sw:
         StreamWriter[DestUrlType, Data], mf: ClassTag[Data]): Int =
-      input(url)(ThrowExceptions) pumpTo sw.output(dest)(ThrowExceptions)
+      input(url) pumpTo sw.output(dest)
   }
 
   /** Type class object for reading `Char`s from a `String` */

@@ -61,7 +61,7 @@ trait Net { this: BaseIo =>
   class HttpResponse(val headers: Map[String, List[String]], val status: Int, is: InputStream) {
     def input[Data](implicit ib: InputBuilder[InputStream, Data], eh: ExceptionHandler):
         eh.![Exception, Input[Data]]=
-      eh.except(ib.input(is)(ThrowExceptions))
+      eh.except(ib.input(is))
   }
 
   trait PostType[-C] {
@@ -130,7 +130,9 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = eh.except {
+          post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(implicitly[PostType[C]], strategy.ThrowExceptions)
+        }
     
     /** Sends an HTTP post to this URL.
       *
@@ -165,7 +167,7 @@ trait Net { this: BaseIo =>
       conn.setRequestProperty("Content-Type", implicitly[PostType[C]].contentType.name)
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
-      ensuring(OutputStreamBuilder.output(conn.getOutputStream)(ThrowExceptions)) { out =>
+      ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
         implicitly[PostType[C]].sender(content) > out
       } (_.close())
 

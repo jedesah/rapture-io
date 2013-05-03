@@ -35,14 +35,14 @@ trait Sockets { this: BaseIo =>
   def listen[K](port: Int)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K], eh: ExceptionHandler): eh.![Exception, (Input[K], Output[K])] = eh.except {
     val sock = new java.net.ServerSocket(port)
     val sock2 = sock.accept()
-    (ib.input(sock2.getInputStream)(ThrowExceptions), ob.output(sock2.getOutputStream)(ThrowExceptions))
+    (ib.input(sock2.getInputStream), ob.output(sock2.getOutputStream))
   }
 
   def tcpHandle[K](port: Int)(action: (Input[K], Output[K]) => Unit)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K]): Unit = {
     val sock = new java.net.ServerSocket(port)
     while(true) {
       val sock2 = sock.accept()
-      fork { action(ib.input(sock2.getInputStream)(ThrowExceptions), ob.output(sock2.getOutputStream)(ThrowExceptions)) }
+      fork { action(ib.input(sock2.getInputStream), ob.output(sock2.getOutputStream)) }
     }
   }
 

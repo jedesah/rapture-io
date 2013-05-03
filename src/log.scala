@@ -42,10 +42,7 @@ trait Logging { logging: BaseIo =>
   trait Logger { def log(msg: String, level: Level, zone: Zone) }
 
   case class FileLogger(file: FileUrl) extends Logger {
-    def log(msg: String, level: Level, zone: Zone): Unit = {
-      implicit val exceptionHandler = ThrowExceptions
-      (msg+"\n") >> file
-    }
+    def log(msg: String, level: Level, zone: Zone): Unit = (msg+"\n") >> file
   }
 
   case object StdoutLogger extends Logger {
@@ -141,7 +138,6 @@ trait Logging { logging: BaseIo =>
           Zone(q(0)) -> readLevel(q(1))
         }).toMap
         log.listen(logger, level, zs)
-        implicit val exceptionHandler = ThrowExceptions
         try in.slurp() catch {
           case e: Exception => ()
         }

@@ -74,7 +74,7 @@ trait JsonExtraction { this: BaseIo =>
           })
           sb.append(textParts.next)
         }
-        Json.parse(sb.toString)(jp, ThrowExceptions)
+        Json.parse(sb.toString)(jp, strategy.ThrowExceptions)
       }
 
       /** Extracts values in the structure specified from parsed JSON.  Each element in the JSON
@@ -86,10 +86,10 @@ trait JsonExtraction { this: BaseIo =>
         def extract(struct: Any, path: SimplePath): Unit =
           struct match {
             case d: Double =>
-              if(json.extract(path).get[Double](JsonExtractor.doubleJsonExtractor, ThrowExceptions) != d)
+              if(json.extract(path).get[Double](JsonExtractor.doubleJsonExtractor, strategy.ThrowExceptions) != d)
                 throw new Exception("Value doesn't match")
             case s: String =>
-              if(json.extract(path).get[String](JsonExtractor.stringJsonExtractor, ThrowExceptions) != s)
+              if(json.extract(path).get[String](JsonExtractor.stringJsonExtractor, strategy.ThrowExceptions) != s)
                 throw new Exception("Value doesn't match")
             case m: Map[_, _] => m foreach {
               case (k, v) =>
