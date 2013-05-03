@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -24,6 +24,8 @@ package tests.rapture.io
 import rapture.io._
 
 object Tests extends TestApp {
+
+  implicit val exceptionStrategy = rapture.ThrowExceptions
 
   val generators = new Suite("generators.scala") {
 

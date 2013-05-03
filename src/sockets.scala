@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -32,17 +32,17 @@ trait Sockets { this: BaseIo =>
     *
     * @usecase def listen(port: Int): Input[Byte]
     * @param port the port to listen to */
-  def listen[K](port: Int)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K]): ![Exception, (Input[K], Output[K])] = {
+  def listen[K](port: Int)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K], eh: ExceptionHandler): eh.![Exception, (Input[K], Output[K])] = eh.except {
     val sock = new java.net.ServerSocket(port)
     val sock2 = sock.accept()
-    except((ib.input(sock2.getInputStream), ob.output(sock2.getOutputStream)))
+    (ib.input(sock2.getInputStream)(ThrowExceptions), ob.output(sock2.getOutputStream)(ThrowExceptions))
   }
 
   def tcpHandle[K](port: Int)(action: (Input[K], Output[K]) => Unit)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K]): Unit = {
     val sock = new java.net.ServerSocket(port)
     while(true) {
       val sock2 = sock.accept()
-      fork { action(ib.input(sock2.getInputStream), ob.output(sock2.getOutputStream)) }
+      fork { action(ib.input(sock2.getInputStream)(ThrowExceptions), ob.output(sock2.getOutputStream)(ThrowExceptions)) }
     }
   }
 

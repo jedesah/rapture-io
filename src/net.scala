@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -59,7 +59,9 @@ trait Net { this: BaseIo =>
   }
 
   class HttpResponse(val headers: Map[String, List[String]], val status: Int, is: InputStream) {
-    def input[Data](implicit ib: InputBuilder[InputStream, Data]) = ib.input(is)
+    def input[Data](implicit ib: InputBuilder[InputStream, Data], eh: ExceptionHandler):
+        eh.![Exception, Input[Data]]=
+      eh.except(ib.input(is)(ThrowExceptions))
   }
 
   trait PostType[-C] {
@@ -128,7 +130,7 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map()): ![HttpExceptions, HttpResponse] = post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")
     
     /** Sends an HTTP post to this URL.
       *
@@ -137,8 +139,8 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def post[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(), method: String = "POST"):
-        ![HttpExceptions, HttpResponse] = except {
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(), method: String = "POST")(implicit eh: ExceptionHandler):
+        eh.![HttpExceptions, HttpResponse] = eh.except {
 
       val conn: URLConnection = new URL(toString).openConnection()
       conn match {
@@ -163,8 +165,8 @@ trait Net { this: BaseIo =>
       conn.setRequestProperty("Content-Type", implicitly[PostType[C]].contentType.name)
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
-      ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
-        implicitly[PostType[C]].sender(content) > unexcept(out)
+      ensuring(OutputStreamBuilder.output(conn.getOutputStream)(ThrowExceptions)) { out =>
+        implicitly[PostType[C]].sender(content) > out
       } (_.close())
 
       import scala.collection.JavaConversions._
@@ -244,7 +246,7 @@ trait Net { this: BaseIo =>
     private val UrlRegex = """(https?):\/\/([\.\-a-z0-9]+)(:[1-9][0-9]*)?\/?(.*)""".r
 
     /** Parses a URL string into an HttpUrl */
-    def parse(s: String): ![Exception, HttpUrl] = except { s match {
+    def parse(s: String)(implicit eh: ExceptionHandler): eh.![Exception, HttpUrl] = eh.except { s match {
       case UrlRegex(scheme, server, port, path) =>
         val rp = new SimplePath(path.split("/"), Map())
         scheme match {

@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -34,13 +34,13 @@ trait Files { this: BaseIo =>
 
   /** Type class object for writing `FileUrl`s as `Output[Stream]`s */
   implicit object FileStreamCharWriter extends StreamWriter[FileUrl, Char] {
-    def output(url: FileUrl): ![Exception, Output[Char]] =
-      except(new CharOutput(new BufferedWriter(new FileWriter(url.javaFile))))
+    def output(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
+      eh.except(new CharOutput(new BufferedWriter(new FileWriter(url.javaFile))))
   }
 
   implicit object FileStreamCharAppender extends StreamAppender[FileUrl, Char] {
-    def appendOutput(url: FileUrl): ![Exception, Output[Char]] =
-      except(new CharOutput(new BufferedWriter(new FileWriter(url.javaFile, true))))
+    def appendOutput(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
+      eh.except(new CharOutput(new BufferedWriter(new FileWriter(url.javaFile, true))))
   }
 
   /** The file scheme object used as a factory for FileUrls. */
@@ -77,39 +77,44 @@ trait Files { this: BaseIo =>
   }
 
   trait Navigable[UrlType] {
-    def children(url: UrlType): ![Exception, List[UrlType]]
+    def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, List[UrlType]]
     
     /** Returns false if the filesystem object represented by this FileUrl is a file, and true if
       * it is a directory. */
-    def isDirectory(url: UrlType): ![Exception, Boolean]
+    def isDirectory(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Boolean]
     
     /** If this represents a directory, returns an iterator over all its descendants,
       * otherwise returns the empty iterator. */
-    def descendants(url: UrlType): ![Exception, Iterator[UrlType]] =
-      except(children(url).iterator.flatMap { c =>
-        if(isDirectory(c)) Iterator(c) ++ descendants(c) else Iterator(c)
-      })
+    def descendants(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
+      eh.except {
+        children(url)(ThrowExceptions).iterator.flatMap { c =>
+          if(isDirectory(c)(ThrowExceptions)) Iterator(c) ++ descendants(c)(ThrowExceptions)
+          else Iterator(c)
+        }
+      }
   }
 
   implicit def navigableExtras[UrlType: Navigable](url: UrlType) = new {
     
     /** Return a list of children of this URL */
-    def children = implicitly[Navigable[UrlType]].children(url)
+    def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
     
     /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
-    def isDirectory: ![Exception, Boolean] = implicitly[Navigable[UrlType]].isDirectory(url)
+    def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
+      implicitly[Navigable[UrlType]].isDirectory(url)
 
     /** Return an iterator of all descendants of this URL. */
-    def descendants: ![Exception, Iterator[UrlType]] =
+    def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
       implicitly[Navigable[UrlType]].descendants(url)
   }
 
   /** Specifies how file: URLs should be navigable. */
-  implicit val NavigableFile = new Navigable[FileUrl] {
-    def children(url: FileUrl): ![Exception, List[FileUrl]] = 
-      except(if(url.isFile) Nil else (url.javaFile.list().to[List]) map { fn: String => url./(fn) })
+  implicit object NavigableFile extends Navigable[FileUrl] {
+    def children(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, List[FileUrl]] = 
+      eh.except(if(url.isFile) Nil else (url.javaFile.list().to[List]) map { fn: String => url./(fn) })
     
-    def isDirectory(url: FileUrl) = except(url.javaFile.isDirectory())
+    def isDirectory(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
+      eh.except(url.javaFile.isDirectory())
   }
 
   /** Defines a URL for the file: scheme, and provides standard filesystem operations on the file
@@ -132,8 +137,8 @@ trait Files { this: BaseIo =>
     /** Deletes the file represented by this FileUrl. If the recursive flag is set and the
       * filesystem object is a directory, all subfolders and their contents will also be
       * deleted. */
-    def delete(recursive: Boolean = false): ![Exception, Boolean] =
-      except(if(recursive) deleteRecursively() else javaFile.delete())
+    def delete(recursive: Boolean = false)(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
+      eh.except(if(recursive) deleteRecursively() else javaFile.delete())
     
     /** Add a hook to the filesystem to delete this file upon shutdown of the JVM. */
     def deleteOnExit(): Unit = javaFile.deleteOnExit()
@@ -152,19 +157,21 @@ trait Files { this: BaseIo =>
     def hidden: Boolean = if(exists) javaFile.isHidden() else throw NotFound()
    
     /** Returns the date of the last modification to the file or directory. */
-    def lastModified: ![NotFoundExceptions, Time.DateTime] = except(javaFile.lastModified() match {
+    def lastModified(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Time.DateTime] =
+      eh.except(javaFile.lastModified() match {
       case 0L => throw NotFound()
       case d => Time.DateTime.unapply(d).get
     })
     
     /** Returns the size of the file in bytes. */
-    def length: ![NotFoundExceptions, Long] = except(javaFile.length() match {
-      case 0L if !exists => throw NotFound()
-      case x => x
-    })
+    def length(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Long] =
+      eh.except(javaFile.length() match {
+        case 0L if !exists => throw NotFound()
+        case x => x
+      })
     
     /** Returns the size of the file in bytes. */
-    def size: ![NotFoundExceptions, Long] = length
+    def size(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Long] = length
     
     /** Creates a new instance of this type of URL. */
     def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath): FileUrl =
@@ -173,33 +180,39 @@ trait Files { this: BaseIo =>
     /** If the filesystem object represented by this FileUrl does not exist, it is created as a
       * directory, provided that either the immediate parent directory already exists, or the
       * makeParents path is set. */
-    def mkdir(makeParents: Boolean = false): ![Exception, Boolean] =
-      except(if(makeParents) javaFile.mkdirs() else javaFile.mkdir())
+    def mkdir(makeParents: Boolean = false)(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
+      eh.except(if(makeParents) javaFile.mkdirs() else javaFile.mkdir())
     
     /** Renames this file to a new location. */
     def renameTo(dest: FileUrl): Boolean = javaFile.renameTo(dest.javaFile)
     
     /** Copies this file to a new location specified by the dest parameter. */
-    def copyTo(dest: FileUrl, overwrite: Boolean = false, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte]): ![Exception, Int] = except {
+    def copyTo(dest: FileUrl, overwrite: Boolean = false, recursive: Boolean = false)(implicit sr: StreamReader[FileUrl, Byte], eh: ExceptionHandler): eh.![Exception, Int] = eh.except {
+      implicit val exceptionHandler = ThrowExceptions
       if(dest.exists) {
         if(isFile && !dest.isFile) throw new Exception("Cannot copy a file onto a directory")
         else if(!isFile && dest.isFile) throw new Exception("Cannot copy a directory onto a file")
         else if(!overwrite) throw new Exception("Destination already exists")
         else if(isFile) sr.pump(this, dest)
         else if(!recursive) throw new Exception("Cannot copy directory")
-        else NavigableFile.children(this).foldLeft(0) { (c, f) => c + f.copyTo(dest / f.filename, overwrite, recursive) }
+        else NavigableFile.children(this).foldLeft(0) { (c, f) =>
+          c + f.copyTo(dest / f.filename, overwrite, recursive)
+        }
       } else {
         if(isFile) sr.pump(this, dest) else {
           dest.mkdir()
-          NavigableFile.children(this).foldLeft(0) { (c, f) => c + f.copyTo(dest / f.filename, overwrite, recursive) }
+          NavigableFile.children(this).foldLeft(0) { (c, f) =>
+            c + f.copyTo(dest / f.filename, overwrite, recursive)
+          }
         }
       }
     }
     
     /** Moves this file to a new location specified by the dest parameter. This will first attempt
       * to move the file by renaming it, but will attempt copying and deletion if renaming fails. */
-    def moveTo(dest: FileUrl): ![Exception, Boolean] =
-      except(renameTo(dest) || (copyTo(dest) > 0) && delete())
+    def moveTo(dest: FileUrl)(implicit sr: StreamReader[FileUrl, Byte], eh: ExceptionHandler):
+        eh.![Exception, Boolean] =
+      eh.except(renameTo(dest) || (copyTo(dest)(sr, ThrowExceptions) > 0) && delete()(ThrowExceptions))
 
     /** Update the last-modified time of this file to the current time. */
     def touch() = javaFile.setLastModified(Time.now().toLong)
@@ -208,22 +221,22 @@ trait Files { this: BaseIo =>
     def lastModified_=(d: Time.DateTime) = javaFile.setLastModified(d.toLong)
     
     /** Extract the file extension from the name of this file. */
-    def extension: ![Exception, Option[String]] =
-      except(if(filename contains ".") Some(filename.split("\\.").last) else None)
+    def extension(implicit eh: ExceptionHandler): eh.![Exception, Option[String]] =
+      eh.except(if(filename contains ".") Some(filename.split("\\.").last) else None)
     
     /** Attempt to alter the permissions of this file so that it is writable. */
     def writable_=(b: Boolean) =
       if(!b) javaFile.setReadOnly() else writable || (throw new IOException("Can't set writable"))
     
     /** Creates a temporary file beneath this directory with the prefix and suffix specified. */
-    def tempFile(prefix: String = "tmp", suffix: String = ""): ![Exception, FileUrl] =
-      except(File(java.io.File.createTempFile(prefix, suffix, javaFile)))
+    def tempFile(prefix: String = "tmp", suffix: String = "")(implicit eh: ExceptionHandler): eh.![Exception, FileUrl] =
+      eh.except(File(java.io.File.createTempFile(prefix, suffix, javaFile)))
     
     private def deleteRecursively(): Boolean = {
-      if(NavigableFile.isDirectory(this))
-        NavigableFile.children(this).foreach(_.deleteRecursively())
+      if(NavigableFile.isDirectory(this)(ThrowExceptions))
+        NavigableFile.children(this)(ThrowExceptions).foreach(_.deleteRecursively())
       
-      delete()
+      delete()(ThrowExceptions)
     }
   }
 }

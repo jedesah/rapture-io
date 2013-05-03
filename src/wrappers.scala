@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -32,11 +32,12 @@ import annotation.implicitNotFound
 trait LowerPriorityWrappers { this: BaseIo =>
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
-    def input(t: T): ![Exception, Input[String]] = except(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
+    def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
+      eh.except(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T], encoding: Encoding): StreamWriter[T, String] = new StreamWriter[T, String] {
-    def output(t: T): ![Exception, Output[String]] = except(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[String]] = eh.except(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
 }
@@ -45,24 +46,26 @@ trait LowPriorityWrappers extends LowerPriorityWrappers { this: BaseIo =>
   
   /** Type class object for creating an Input[Byte] from a Java InputStream */
   implicit object InputStreamBuilder extends InputBuilder[InputStream, Byte] {
-    def input(s: InputStream): ![Exception, Input[Byte]] = except(new ByteInput(s))
+    def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] = eh.except(new ByteInput(s))
   }
 
   /** Type class object for creating an Output[Byte] from a Java Reader */
   implicit object OutputStreamBuilder extends OutputBuilder[OutputStream, Byte] {
-    def output(s: OutputStream): ![Exception, Output[Byte]] = except(new ByteOutput(s))
+    def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] = eh.except(new ByteOutput(s))
   }
 
   implicit object HttpResponseByteReader extends StreamReader[HttpResponse, Byte] {
-    def input(response: HttpResponse): ![Exception, Input[Byte]] = except(response.input[Byte])
+    def input(response: HttpResponse)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
+      response.input[Byte]
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {
-    def input(t: T): ![Exception, Input[Char]] = except(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
+    def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
+      eh.except(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T], encoding: Encoding): StreamWriter[T, Char] = new StreamWriter[T, Char] {
-    def output(t: T): ![Exception, Output[Char]] = except(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] = eh.except(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   /*implicit val ProcIsReadable: StreamReader[Proc, Byte] = new StreamReader[Proc, Byte] {
@@ -181,14 +184,14 @@ trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
 
   implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream, String] =
     new InputBuilder[InputStream, String] {
-      def input(s: InputStream): ![Exception, Input[String]] =
-        except(new LineInput(new InputStreamReader(s, encoding.name)))
+      def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
+        eh.except(new LineInput(new InputStreamReader(s, encoding.name)))
     }
 
   implicit def stringOutputBuilder(implicit encoding: Encoding): OutputBuilder[OutputStream, String] =
     new OutputBuilder[OutputStream, String] {
-      def output(s: OutputStream): ![Exception, Output[String]] =
-        except(new LineOutput(new OutputStreamWriter(s, encoding.name)))
+      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[String]] =
+        eh.except(new LineOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
   /** Views an `Input[Byte]` as a `java.io.InputStream` */
@@ -217,17 +220,20 @@ trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
 
   /** Type class object for creating an Input[Char] from a Java Reader */
   implicit object ReaderBuilder extends InputBuilder[Reader, Char] {
-    def input(s: Reader): ![Exception, Input[Char]] = except(new CharInput(s))
+    def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
+      eh.except(new CharInput(s))
   }
 
   /** Type class object for creating an Input[String] from a Java Reader */
   implicit object LineReaderBuilder extends InputBuilder[Reader, String] {
-    def input(s: Reader): ![Exception, Input[String]] = except(new LineInput(s))
+    def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
+      eh.except(new LineInput(s))
   }
 
   /** Type class object for creating an Output[Char] from a Java Writer */
   implicit object WriterBuilder extends OutputBuilder[Writer, Char] {
-    def output(s: Writer): ![Exception, Output[Char]] = except(new CharOutput(s))
+    def output(s: Writer)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
+      eh.except(new CharOutput(s))
   }
 
   implicit object AppenderBuilder extends AppenderBuilder[Writer, Char] {
@@ -238,8 +244,8 @@ trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
     * [[Encoding]] implicitly for converting between `Byte`s and `Char`s */
   implicit def outputStreamCharBuilder(implicit encoding: Encoding) =
     new OutputBuilder[OutputStream, Char] {
-      def output(s: OutputStream): ![Exception, Output[Char]] =
-        except(new CharOutput(new OutputStreamWriter(s, encoding.name)))
+      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
+        eh.except(new CharOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
   /** Type class definition for creating an Input[Char] from a Java InputStream, taking an
@@ -247,7 +253,7 @@ trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
   implicit def inputStreamCharBuilder(implicit encoding: Encoding):
       InputBuilder[InputStream, Char] =
     new InputBuilder[InputStream, Char] {
-      def input(s: InputStream): ![Exception, Input[Char]] =
-        except(new CharInput(new InputStreamReader(s, encoding.name)))
+      def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
+        eh.except(new CharInput(new InputStreamReader(s, encoding.name)))
     }
 }

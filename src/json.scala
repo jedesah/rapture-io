@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -62,7 +62,7 @@ trait JsonExtraction { this: BaseIo =>
   @inline implicit class JsonStrings(sc: StringContext)(implicit jp: JsonParser) extends {
     object json {
       /** Creates a new interpolated JSON object. */
-      def apply(exprs: Any*): ![Exception, Json] = except {
+      def apply(exprs: Any*)(implicit eh: ExceptionHandler): eh.![Exception, Json] = eh.except {
         val sb = new StringBuilder
         val textParts = sc.parts.iterator
         val expressions = exprs.iterator
@@ -74,7 +74,7 @@ trait JsonExtraction { this: BaseIo =>
           })
           sb.append(textParts.next)
         }
-        Json.parse(sb.toString)(jp)
+        Json.parse(sb.toString)(jp, ThrowExceptions)
       }
 
       /** Extracts values in the structure specified from parsed JSON.  Each element in the JSON
@@ -86,10 +86,10 @@ trait JsonExtraction { this: BaseIo =>
         def extract(struct: Any, path: SimplePath): Unit =
           struct match {
             case d: Double =>
-              if(json.extract(path).get[Double](JsonExtractor.doubleJsonExtractor) != d)
+              if(json.extract(path).get[Double](JsonExtractor.doubleJsonExtractor, ThrowExceptions) != d)
                 throw new Exception("Value doesn't match")
             case s: String =>
-              if(json.extract(path).get[String](JsonExtractor.stringJsonExtractor) != s)
+              if(json.extract(path).get[String](JsonExtractor.stringJsonExtractor, ThrowExceptions) != s)
                 throw new Exception("Value doesn't match")
             case m: Map[_, _] => m foreach {
               case (k, v) =>
@@ -111,13 +111,15 @@ trait JsonExtraction { this: BaseIo =>
   object Json {
 
     /** Parses a string containing JSON into a `Json` object */
-    def parse(s: String)(implicit jp: JsonParser): ![ParseException, Json] = except {
+    def parse(s: String)(implicit jp: JsonParser, eh: ExceptionHandler):
+        eh.![ParseException, Json] = eh.except {
       new Json(try jp.parse(s).get catch {
         case e: NoSuchElementException => throw new ParseException(s)
       })
     }
 
-    def parseMutable(s: String)(implicit jp: JsonParser): ![ParseException, MutableJson] = except {
+    def parseMutable(s: String)(implicit jp: JsonParser, eh: ExceptionHandler):
+        eh.![ParseException, MutableJson] = eh.except {
       new MutableJson(try jp.parseMutable(s).get catch {
         case e: NoSuchElementException => throw new ParseException(s)
       })
@@ -206,8 +208,8 @@ trait JsonExtraction { this: BaseIo =>
           null))
    
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
-    def get[T](implicit jsonExtractor: JsonExtractor[T]): ![Exception, T] =
-      except(jsonExtractor.cast(json))
+    def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler): eh.![Exception, T] =
+      eh.except(jsonExtractor.cast(json))
 
     /** Assumes the Json object is wrapping a List, and returns the length */
     def length = json.asInstanceOf[List[Json]].length
@@ -250,8 +252,8 @@ trait JsonExtraction { this: BaseIo =>
           getOrElse(null))
    
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
-    def get[T](implicit jsonExtractor: JsonExtractor[T]): ![Exception, T] =
-      except(jsonExtractor.cast(json))
+    def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler): eh.![Exception, T] =
+      eh.except(jsonExtractor.cast(json))
 
     /** Assumes the Json object is wrapping a List, and returns the length */
     def length = json.asInstanceOf[ListBuffer[Json]].length

@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -32,7 +32,7 @@ trait Processes { this: BaseIo =>
 
   implicit class ExecStrings(sc: StringContext) extends {
     object sh {
-      def apply(exprs: String*): ![Exception, Proc] = {
+      def apply(exprs: String*)(implicit eh: ExceptionHandler): eh.![Exception, Proc] = {
         val sb = new StringBuilder
         val textParts = sc.parts.iterator
         val expressions = exprs.iterator
@@ -42,7 +42,7 @@ trait Processes { this: BaseIo =>
           sb.append(textParts.next)
         }
         // FIXME: Parse command, rather than assuming split on spaces
-        except(new Proc(runtime.exec(sb.toString.split(" "))))
+        eh.except(new Proc(runtime.exec(sb.toString.split(" "))))
       }
     }
   }

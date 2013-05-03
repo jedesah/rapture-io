@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.7.2
+Version 0.8.0
 
 The primary distribution site is
 
@@ -34,6 +34,7 @@ trait Extractors { this: BaseIo =>
   object Xml {
     
     def unapply(in: Input[Char]): Option[Seq[scala.xml.Node]] = try {
+      implicit val exceptionHandler = ThrowExceptions
       val so = new StringOutput
       in > so
       unapply(so.buffer)
@@ -42,38 +43,5 @@ trait Extractors { this: BaseIo =>
     def unapply(in: String): Option[Seq[scala.xml.Node]] =
       try { Some(scala.xml.XML.loadString(in)) } catch { case e: Exception => None }
   }
-
-  /** Defines extractors for parsing a JSON array from an Input[Char] or a String. */
-  object JsonArray {
-    
-    def unapply(in: Input[Char]): Option[List[Any]] = try {
-      val so = new StringOutput
-      in > so
-      unapply(so.buffer)
-    } catch { case e: Exception => None }
-
-    def unapply(in: String): Option[List[Any]] = try {
-      scala.util.parsing.json.JSON.parseFull(in) flatMap { a =>
-        if(a.isInstanceOf[List[_]]) Some(a.asInstanceOf[List[Any]]) else None
-      }
-    } catch { case e: Exception => None }
-  }
-
-  /** Defines extractors for parsing a JSON object from an Input[Char] or a String. */
-  object JsonObject {
-
-    def unapply(in: Input[Char]): Option[Map[String, Any]] = try {
-      val so = new StringOutput
-      in > so
-      unapply(so.buffer)
-    } catch { case e: Exception => None }
-
-    def unapply(in: String): Option[Map[String, Any]] = try {
-      scala.util.parsing.json.JSON.parseFull(in) flatMap { a =>
-        if(a.isInstanceOf[Map[_, _]]) Some(a.asInstanceOf[Map[String, Any]]) else None
-      }
-    } catch { case e: Exception => None }
-  }
-
 }
 
