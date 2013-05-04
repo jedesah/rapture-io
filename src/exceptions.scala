@@ -38,7 +38,7 @@ trait Exceptions { this: BaseIo =>
 
   sealed trait JsonGetException extends RuntimeException
 
-  case class WrongTypeException() extends JsonGetException
+  case class TypeMismatchException() extends JsonGetException
   case class MissingValueException() extends JsonGetException
 
 }

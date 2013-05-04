@@ -172,7 +172,7 @@ object Tests extends TestApp {
     val navigateObj = test { Json.parse(src).obj.a.get[String] } yields "A"
     val getList = test { Json.parse(src).array.get[List[Int]] } yields List(1, 2, 3)
   
-    val wrongType = test({ Json.parse(src).string.get[Int] }).throws[WrongTypeException]
+    val typeMismatch = test({ Json.parse(src).string.get[Int] }).throws[TypeMismatchException]
     val missingValue = test({ Json.parse(src).missing.get[String] }).throws[MissingValueException]
 
     val extract1 = test {
@@ -193,7 +193,7 @@ object Tests extends TestApp {
     val extract4 = test({
       val json""" { "array": $z } """ = Json.parse(src)
       z.get[String]
-    }).throws[WrongTypeException]
+    }).throws[TypeMismatchException]
     
     val extract5 = test({
       val json""" { "foo": $x } """ = Json.parse(src)
@@ -214,6 +214,37 @@ object Tests extends TestApp {
       val json""" { "obj": { "a": "C", "b": $x } } """ = Json.parse(src)
       x.get[String]
     }).throws[MatchError]
+
+    val jsonBuffer1 = test {
+      val j = JsonBuffer.parse("{}")
+      j.foo = 10
+      j.foo.get[Int]
+    } yields 10
+
+    val jsonBuffer2 = test {
+      val j = JsonBuffer.parse("{}")
+      j.foo += "bar"
+      j.foo(0).get[String]
+    } yields "bar"
+
+    val jsonBuffer3 = test {
+      val j = JsonBuffer.parse("{}")
+      j.foo.bar.baz = "quux"
+      j.foo.bar.baz.get[String]
+    } yields "quux"
+
+    val jsonBuffer4 = test({
+      val j = JsonBuffer.parse("{}")
+      j.foo.bar = 100
+      j.foo -= "bar"
+      j.foo.bar.get[String]
+    }).throws[MissingValueException]
+
+    val jsonBuffer5 = test({
+      val j = JsonBuffer.parse("{}")
+      j.foo = "bar"
+      j.foo.get[Int]
+    }).throws[TypeMismatchException]
 
   }
 

@@ -195,7 +195,8 @@ trait JsonExtraction { this: BaseIo =>
     implicit val noopExtractor2 = new JsonExtractor[JsonBuffer](x => new JsonBuffer(x))
     implicit val stringJsonExtractor = new JsonExtractor[String](_.asInstanceOf[String])
     implicit val doubleJsonExtractor = new JsonExtractor[Double](_.asInstanceOf[Double])
-    implicit val intJsonExtractor = new JsonExtractor[Int](_.asInstanceOf[Double].toInt)
+    implicit val intJsonExtractor = new JsonExtractor[Int]({ x => try x.asInstanceOf[Int] catch {
+        case e: ClassCastException => x.asInstanceOf[Double].toInt } })
     implicit val longJsonExtractor = new JsonExtractor[Long](_.asInstanceOf[Double].toLong)
     implicit val booleanJsonExtractor = new JsonExtractor[Boolean](_.asInstanceOf[Boolean])
     implicit val anyJsonExtractor = new JsonExtractor[Any](identity)
@@ -259,7 +260,7 @@ trait JsonExtraction { this: BaseIo =>
     def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
         eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(normalize) catch {
           case e: MissingValueException => throw e
-          case e: Exception => throw new WrongTypeException()
+          case e: Exception => throw new TypeMismatchException()
         })
 
     /** Assumes the Json object is wrapping a List, and returns an iterator over the list */
@@ -273,16 +274,16 @@ trait JsonExtraction { this: BaseIo =>
       extends Dynamic {
     /** Updates the element `key` of the JSON object with the value `v` */
     def updateDynamic(key: String)(v: Any): Unit =
-      normalize(false).asInstanceOf[HashMap[String, Any]](key) = v
+      normalize(false, true).asInstanceOf[HashMap[String, Any]](key) = v
    
     /** Updates the `i`th element of the JSON array with the value `v` */
-    def update(i: Int, v: Any): Unit = normalize(true).asInstanceOf[ListBuffer[Any]](i) = v
+    def update(i: Int, v: Any): Unit = normalize(true, true).asInstanceOf[ListBuffer[Any]](i) = v
 
     /** Removes the specified key from the JSON object */
-    def -=(k: String): Unit = normalize(false).asInstanceOf[HashMap[String, Any]].remove(k)
+    def -=(k: String): Unit = normalize(false, true).asInstanceOf[HashMap[String, Any]].remove(k)
 
     /** Adds the specified value to the JSON array */
-    def +=(v: Any): Unit = normalize(true).asInstanceOf[ListBuffer[Any]] += v
+    def +=(v: Any): Unit = normalize(true, true).asInstanceOf[ListBuffer[Any]] += v
 
     /** Assumes the Json object is wrapping a ListBuffer, and extracts the `i`th element from the
       * list */
@@ -302,7 +303,7 @@ trait JsonExtraction { this: BaseIo =>
     def selectDynamic(key: String): JsonBuffer =
       new JsonBuffer(json, Right(key) :: path)
    
-    private[JsonExtraction] def normalize(array: Boolean): Any = {
+    private[JsonExtraction] def normalize(array: Boolean, modify: Boolean): Any = {
       yCombinator[(Any, List[Either[Int, String]]), Any] { fn => v => v match {
         case (j, Nil) => j
         case (j, Left(i) :: t) =>
@@ -311,9 +312,13 @@ trait JsonExtraction { this: BaseIo =>
             case e: IndexOutOfBoundsException => throw MissingValueException()
           }, t)
         case (j, Right(k) :: t) =>
-          val obj = if(array && t.length == 1) new ListBuffer[Any] else new HashMap[String, Any]()
-          fn(try j.asInstanceOf[HashMap[String, Any]].getOrElseUpdate(k, obj) catch {
+          val obj = if(array && t == Nil) new ListBuffer[Any] else new HashMap[String, Any]()
+          fn(try {
+            if(modify) j.asInstanceOf[HashMap[String, Any]].getOrElseUpdate(k, obj)
+            else j.asInstanceOf[HashMap[String, Any]](k)
+          } catch {
             case e: ClassCastException => throw MissingValueException()
+            case e: NoSuchElementException => throw MissingValueException()
           }, t)
           
       } } (json -> path.reverse)
@@ -321,16 +326,19 @@ trait JsonExtraction { this: BaseIo =>
 
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
-        eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(normalize(false)) catch {
-          case e: MissingValueException => throw e
-          case e: Exception => throw new WrongTypeException()
-        })
+        eh.![JsonGetException, T] =
+          eh.except(try jsonExtractor.cast(normalize(false, false)) catch {
+            case e: MissingValueException => throw e
+            case e: Exception => throw new TypeMismatchException()
+          })
 
     /** Assumes the Json object is wrapping a List, and returns an iterator over the list */
     def iterator: Iterator[JsonBuffer] =
-      normalize(true).asInstanceOf[ListBuffer[JsonBuffer]].iterator
+      normalize(true, false).asInstanceOf[ListBuffer[JsonBuffer]].iterator
 
-    override def toString = Json.format(Some(json), 0)
-      try Json.format(Some(normalize(false)), 0) catch { case e: JsonGetException => "<error>" }
+    override def toString =
+      try Json.format(Some(normalize(false, false)), 0) catch {
+        case e: JsonGetException => "<error>"
+      }
   }
 }
