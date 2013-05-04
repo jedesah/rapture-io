@@ -26,7 +26,7 @@ import java.io._
 import java.net._
 
 /** Provides framework classes and traits for handling general URLs. */
-trait Urls { this: BaseIo =>
+trait Urls extends Linking {
 
   /** Represents a generic URL */
   abstract class Url[+UrlType <: Url[UrlType]](elements: Seq[String], afterPath: AfterPath) extends
@@ -55,12 +55,6 @@ trait Urls { this: BaseIo =>
     override def +[P <: Path[P]](dest: P): Path[_] =
       if(dest.absolute) dest
       else pathRoot.makePath(0, dest.elements ++ thisPath.elements.drop(dest.ascent), afterPath)
-  }
-
-  /** Repenesents a URL scheme */
-  trait Scheme[+U <: Uri] {
-    def schemeName: String
-    override def toString() = schemeName
   }
 
   /** Defines a base to upon which the hierarchical part of the URL is appended */

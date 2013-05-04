@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Hex { this: BaseIo =>
+trait Hex extends ExceptionHandling {
 
   object Hex {
     def encode(a: Array[Byte]): String =

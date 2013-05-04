@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Codecs { this: BaseIo =>
+trait Codecs extends Encodings {
 
   /** Standard Base64 codec. */
   object Base64 extends Base64Codec

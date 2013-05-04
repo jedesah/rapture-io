@@ -20,9 +20,12 @@ License.
 ***************************************************************************************************/
 
 package rapture.implementation
+
 import rapture._
 
-trait Encodings { this: BaseIo =>
+import java.net._
+
+trait Encodings extends Misc {
 
   type Encoding = Encodings.Encoding
 
@@ -35,6 +38,9 @@ trait Encodings { this: BaseIo =>
   object Encodings extends Lookup[String] {
     
     type Item = Encoding
+    
+    @implicitNotFound("Character encoding has not been provided. Please specify an implicit "+
+        "Encoding value, e.g. implicit val enc = Encodings.`UTF-8`.")
     case class Encoding(name: String) extends AutoAppend { def index = name }
     
     val `US-ASCII` = Encoding("US-ASCII")
@@ -62,4 +68,12 @@ trait Encodings { this: BaseIo =>
     lazy val Default = lookup(System.getProperty("file.encoding"))
 
   }
+
+  implicit class UrlCodec(s: String) {
+    @inline def urlEncode(implicit encoding: Encoding = Encodings.`UTF-8`) =
+      URLEncoder.encode(s, encoding.name)
+    @inline def urlDecode(implicit encoding: Encoding = Encodings.`UTF-8`) =
+      URLDecoder.decode(s, encoding.name)
+  }
+
 }

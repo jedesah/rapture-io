@@ -24,7 +24,7 @@ import rapture._
 
 import scala.collection.mutable._
 
-trait TableFormatting { this: BaseIo =>
+trait TableFormatting extends Misc {
   
   implicit class StringExtras(string: String) {
     private def doWrap(text: String, width: Int, handle: ((String, Int) => List[String])) =

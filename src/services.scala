@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Services { this: BaseIo =>
+trait Services extends Misc {
 
   type TcpService = Services.Tcp.Item
   

@@ -24,7 +24,7 @@ import rapture._
 
 import java.security._
 
-trait Digests { this: BaseIo =>
+trait Digesting extends Codecs {
 
   abstract class Digester {
     

@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Finance { this: BaseIo =>
+trait Finance {
 
   trait Usd
   trait Gbp

@@ -22,15 +22,11 @@ License.
 package rapture.implementation
 import rapture._
 
-import language.implicitConversions
-
 import java.io._
 import java.net._
 import scala.reflect._
 
-import annotation.implicitNotFound
-
-trait Streams { this: BaseIo =>
+trait Streaming extends JavaWrapping with Digesting with Urls with Net {
 
   /** Safely closes a stream after processing */
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit) = {
@@ -85,10 +81,10 @@ trait Streams { this: BaseIo =>
 
   trait AppenderBuilder[OutputType, Data] { def appendOutput(s: OutputType): Output[Data] }
 
-  implicit def makeAppendable[UrlType](url: UrlType): Appendable[UrlType] =
-    new Appendable(url)
+  //implicit def makeAppendable[UrlType](url: UrlType): Appendable[UrlType] =
+  //  new Appendable(url)
 
-  class Appendable[UrlType](url: UrlType) {
+  implicit class Appendable[UrlType](url: UrlType) {
     def appendOutput[Data](implicit sa: StreamAppender[UrlType, Data], eh: ExceptionHandler) =
       sa.appendOutput(url)
     
@@ -106,11 +102,7 @@ trait Streams { this: BaseIo =>
       eh.except(in) 
   }
 
-  /** Provides methods for URLs which can be read as streams */
-  implicit def makeReadable[UrlType](url: UrlType): Readable[UrlType] =
-    new Readable(url)
-  
-  class Readable[UrlType](url: UrlType) {
+  implicit class Readable[UrlType](url: UrlType) {
     
     /** Gets the input for the resource specified in this URL */
     def input[Data](implicit sr: StreamReader[UrlType, Data], eh: ExceptionHandler):
@@ -135,7 +127,7 @@ trait Streams { this: BaseIo =>
         StreamReader[UrlType, Data], sw: StreamAppender[DestUrlType, Data], eh: ExceptionHandler,
         mf: ClassTag[Data]): eh.![Exception, Int] =
       eh.except(handleInput[Data, Int] { in =>
-        makeAppendable(dest).handleAppend[Data, Int](in pumpTo _)
+        dest.handleAppend[Data, Int](in pumpTo _)
       })
  
     /** Pumps the input for the specified resource to the destination output provided
@@ -158,35 +150,6 @@ trait Streams { this: BaseIo =>
      
       ensuring(input[Data])(body) { in => if(!sr.doNotClose) in.close() }
     }
-
-    // FIXME: Don't slurp the whole stream just to create the MD5 sum
-    def md5Sum()(implicit sr: StreamReader[UrlType, Byte], eh: ExceptionHandler):
-      eh.![Exception, String] = eh.except {
-        Md5.digestHex(slurp[Byte]())
-      }
-
-    // FIXME: Don't slurp the whole stream just to create the MD5 sum
-    def sha256Sum()(implicit sr: StreamReader[UrlType, Byte], eh: ExceptionHandler):
-      eh.![Exception, String] = eh.except {
-        Sha256.digestHex(slurp[Byte]())
-      }
-
-    /** Reads in the entirety of the stream and accumulates it into an appropriate object
-      * depending on the availability of implicit Accumulator type class objects in scope.
-      *
-      * @usecase def slurp[Char](): String
-      * @usecase def slurp[Byte](): Array[Byte]
-      * @tparam Data The units of data being slurped
-      * @return The accumulated data */
-    def slurp[Data]()(implicit sr: StreamReader[UrlType, Data], accumulatorBuilder:
-        AccumulatorBuilder[Data], eh: ExceptionHandler, mf: ClassTag[Data]):
-        eh.![Exception, accumulatorBuilder.Out] =
-      eh.except {
-        val c = accumulatorBuilder.make()
-        input[Data] pumpTo c
-
-        c.buffer
-      }
   }
 
   /** Provides methods for URLs which can be written to as streams, most importantly for getting an
@@ -218,7 +181,7 @@ trait Streams { this: BaseIo =>
     *
     * @tparam Url Url for which this corresponds
     * @tparam Data Units of data to be streamed, typically `Byte` or `Char` */
-  @implicitNotFound(msg = "Cannot write to ${UrlType} resources.")
+  @implicitNotFound(msg = "Cannot write ${Data} data to ${UrlType} resources.")
   trait StreamWriter[-UrlType, @specialized(Byte, Char) Data] {
     def doNotClose = false
     def output(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]]

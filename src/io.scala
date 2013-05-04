@@ -23,7 +23,6 @@ package rapture
 
 import implementation._
 
-import language.implicitConversions
 import language.higherKinds
 
 import scala.reflect.ClassTag
@@ -33,47 +32,18 @@ import scala.concurrent.duration._
 import java.io._
 import java.net._
 
-import annotation.implicitNotFound
-
 /** Combines different elements of the I/O framework.  This class provides implementations of
   * type class objects which should be given higher priority than the defaults.  This allows
   * methods which stream from URLs which have alternative means of being read to favour one type
   * of stream over another without explicitly specifying a type parameter.  Specifically,
   * `FileUrl`s should be read and written and  `HttpUrl`s should be read as
   * byte-streams */
-class BaseIo extends Paths with Streams with Urls with Files with Net with Sockets with
-    Extractors with Accumulators with Wrappers with Uris with Mail with CollectionExtras with
-    Multipart with JsonExtraction with Encryption with Codecs with Digests with Encodings with
-    Generation with Ips with Logging with Mime with Misc with Services with Time with Linking with
-    Classpath with Processes with CommandLine with TableFormatting with Exceptions with Finance with
-    Hex with Ftp with Email with TestFramework {
-
-  @implicitNotFound(msg = "No exception handler was available. Please import ")
-  trait ExceptionHandler {
-  
-    type ![_ <: Exception, _]
-
-    def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): ![E, T]
-  }
-
-  object strategy {
-    implicit object ThrowExceptions extends ExceptionHandler {
-      type ![E <: Exception, T] = T
-      
-      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): T = t
-    }
-
-    implicit object ReturnEither extends ExceptionHandler {
-      type ![E <: Exception, T] = Either[E, T]
-      
-      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Either[E, T] =
-        try Right(t) catch {
-          case e: E => Left(e)
-          case e: Throwable => throw e
-        }
-      
-    }
-  }
+class BaseIo extends FileHandling with
+    Extracting with CollectionExtras with
+    Multipart with JsonProcessing with Encrypting with Encodings with
+    Ips with Logging with MimeTyping with Misc with Linking with
+    Classpath with CommandLine with TableFormatting with Finance with
+    Hex with Ftp with Email with Testing with Generating {
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
@@ -83,40 +53,11 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
   implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](
       _.javaConnection.getInputStream)
 
-  /** Type class object for writing `Byte`s to `FileUrl`s */
-  implicit object FileStreamByteWriter extends StreamWriter[FileUrl, Byte] {
-    def output(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-      eh.except(new ByteOutput(new BufferedOutputStream(new FileOutputStream(url.javaFile))))
-  }
-
   implicit val procByteStreamReader =
     new JavaInputStreamReader[Proc](_.process.getInputStream)
 
   implicit val procByteStreamWriter =
     new JavaOutputStreamWriter[Proc](_.process.getOutputStream)
-
-  implicit object FileStreamByteAppender extends StreamAppender[FileUrl, Byte] {
-    def appendOutput(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-      eh.except(new ByteOutput(new BufferedOutputStream(new FileOutputStream(url.javaFile, true))))
-  }
-
-  class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
-      StreamReader[T, Byte] {
-    def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-      eh.except(new ByteInput(new BufferedInputStream(getInputStream(t))))
-  }
-
-  class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
-      StreamWriter[T, Byte] {
-    def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-      eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
-  }
-
-  class JavaOutputStreamAppender[T](val getOutputStream: T => OutputStream) extends
-      StreamAppender[T, Byte] {
-    def appendOutput(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-      eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
-  }
 
   implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
@@ -136,18 +77,6 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
       eh.except[Exception, Input[Data]](stdin.input)
   }
 
-  implicit class urlCodec(s: String) {
-    @inline def urlEncode(implicit encoding: Encoding = Encodings.`UTF-8`) =
-      URLEncoder.encode(s, encoding.name)
-    @inline def urlDecode(implicit encoding: Encoding = Encodings.`UTF-8`) =
-      URLDecoder.decode(s, encoding.name)
-  }
-
-  // FIXME Move to misc
-  @inline implicit class NullableExtras[T](t: T) {
-    def fromNull = if(t == null) None else Some(t)
-  }
-
   def randomGuid() = java.util.UUID.randomUUID().toString
 
   def DevNull[T] = new Output[T] {
@@ -155,6 +84,17 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
     def flush() = ()
     def write(t: T) = ()
   }
+
+  implicit object HttpFileUrlLinkable extends Linkable[FileUrl, HttpUrl] {
+    type Result = HttpUrl
+    def link(src: FileUrl, dest: HttpUrl) = dest
+  }
+
+  implicit object HttpFileUrlsLinkable extends Linkable[HttpUrl, FileUrl] {
+    type Result = FileUrl
+    def link(src: HttpUrl, dest: FileUrl) = dest
+  }
+
 
   object JavaResources {
     import language.reflectiveCalls

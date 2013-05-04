@@ -25,7 +25,7 @@ import rapture._
 import scala.collection.immutable.{Queue, ListMap}
 import scala.collection.mutable.HashMap
 
-trait CommandLine { this: BaseIo =>
+trait CommandLine {
 
   def sigWinch(action: sun.misc.Signal => Unit) =
     sun.misc.Signal.handle(new sun.misc.Signal("WINCH"), new sun.misc.SignalHandler {

@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Processes { this: BaseIo =>
+trait Executing extends ExceptionHandling {
 
   private val runtime = Runtime.getRuntime
 

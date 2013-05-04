@@ -27,7 +27,19 @@ import javax.mail.internet._
 import javax.activation._
 import scala.xml._
 
-trait Email { this: BaseIo =>
+trait Email extends Linking with MimeTyping {
+
+  object Mailto extends Scheme[MailtoUri] {
+    def schemeName = "mailto"
+    def /(email: String): MailtoUri = new MailtoUri(email)
+  }
+
+  class MailtoUri(val email: String) extends Uri {
+    def absolute = true
+    def scheme = Mailto
+    def schemeName = scheme.schemeName
+    def schemeSpecificPart = email
+  }
 
   case class EmailAddress(email: String, name: String = "") {
     override def toString = if(name == "") email else s""""${name}" <${email}>"""

@@ -22,8 +22,10 @@ License.
 package rapture.implementation
 import rapture._
 
+import scala.reflect._
+
 // Rewrite using actors
-trait Logging { logging: BaseIo =>
+trait Logging extends FileHandling with TcpHandling with Streaming {
 
   /** Basic logging functionality, introducing the concept of logging zones. Note that this is
     * almost certainly not as efficient as it ought to be, so use something else if efficiency
@@ -138,10 +140,10 @@ trait Logging { logging: BaseIo =>
           Zone(q(0)) -> readLevel(q(1))
         }).toMap
         log.listen(logger, level, zs)
-        try in.slurp() catch {
+        try { in.slurp()(implicitly[AccumulatorBuilder[String]], implicitly[ExceptionHandler],
+            inputStreamReader[String], implicitly[ClassTag[String]]) } catch {
           case e: Exception => ()
-        }
-        log.unlisten(logger)
+        } finally log.unlisten(logger)
       }
     }
   }

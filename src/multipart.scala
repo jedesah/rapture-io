@@ -24,7 +24,7 @@ import rapture._
 
 import scala.collection.mutable.{HashMap, ListBuffer}
 
-trait Multipart { this: BaseIo =>
+trait Multipart extends Logging {
 
   case class Multipart(data: Array[Byte], headers: Map[String, String]) {
     def contentType: Option[MimeTypes.MimeType] =

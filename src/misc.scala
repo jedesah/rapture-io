@@ -24,7 +24,7 @@ import rapture._
 
 import scala.collection.mutable._
 
-trait Misc { this: BaseIo =>
+trait Misc {
 
   /** Provides a simple class mixin for creating a list of items from which items can be looked up.
     *
@@ -94,6 +94,7 @@ trait Misc { this: BaseIo =>
   case class B[F, T](c: B[F, T] => (F => T)) extends (B[F, T] => (F => T)) {
     def apply(b: B[F, T]) = c(b)
   }
+  def yCombinator[F, T] = (f: (F => T) => F => T) => B[F, T](x => f(x(x)(_)))(B(x => f(x(x)(_))))
 
   /** Times how long it takes to perform an operation, returning a pair of the result and the
     * duration of the operation in milliseconds. */
@@ -101,6 +102,9 @@ trait Misc { this: BaseIo =>
     val t = System.currentTimeMillis
     blk -> (System.currentTimeMillis - t)
   }
+  
+  @inline implicit class NullableExtras[T](t: T) {
+    def fromNull = if(t == null) None else Some(t)
+  }
 
-  def yCombinator[F, T] = (f: (F => T) => F => T) => B[F, T](x => f(x(x)(_)))(B(x => f(x(x)(_))))
 }

@@ -95,8 +95,8 @@ object Tests extends TestApp {
   val digest = new Suite("digest.scala") {
     
     val md5Sum = test {
-      val q = "Hello World".getBytes("UTF-8").md5Sum().toLowerCase
-    } yields "e59ff97941044f85df5297e1c302d260"
+      "Hello World".getBytes("UTF-8").md5Sum().toLowerCase
+    } yields "b10a8db164e0754105b7a99be72e3fe5"
     
   }
 

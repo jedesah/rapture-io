@@ -27,7 +27,7 @@ import javax.crypto._
 import javax.crypto.spec._
 import java.util._
 
-trait Encryption { this: BaseIo =>
+trait Encrypting extends Digesting {
 
   /** Provides a simple interface for AES encryption with SHA-256 digest
     * verification. This class is stateless. */

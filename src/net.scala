@@ -28,7 +28,7 @@ import java.io._
 import java.net._
 
 /** Provides functionality for handling internet URLs, namely HTTP and HTTPS schemes. */
-trait Net { this: BaseIo =>
+trait Net extends Linking with JsonProcessing with MimeTyping with Services { this: Streaming =>
 
   object HttpMethods {
     
@@ -192,7 +192,7 @@ trait Net { this: BaseIo =>
   implicit object HttpQueryParameters extends QueryType[Path[_], Map[Symbol, String]] {
     def extras(existing: AfterPath, q: Map[Symbol, String]): AfterPath =
       existing + ('?' -> ((q.map({ case (k, v) =>
-        urlCodec(k.name).urlEncode+"="+urlCodec(v).urlEncode
+        UrlCodec(k.name).urlEncode+"="+UrlCodec(v).urlEncode
       }).mkString("&")) -> 1.0))
   }
 
@@ -275,5 +275,16 @@ trait Net { this: BaseIo =>
     def /(hostname: String, port: Int = Services.Tcp.https.portNo) =
       new HttpPathRoot(hostname, port, true)
   }
+
+  implicit object HttpUrlLinkable extends Linkable[HttpUrl, HttpUrl] {
+    type Result = Link
+    def link(src: HttpUrl, dest: HttpUrl) = {
+      if(src.ssl == dest.ssl && src.hostname == dest.hostname && src.port == dest.port) {
+        val lnk = generalLink(src.elements.to[List], dest.elements.to[List])
+        new RelativePath(lnk._1, lnk._2, dest.afterPath)
+      } else dest
+    }
+  }
+
 }
 

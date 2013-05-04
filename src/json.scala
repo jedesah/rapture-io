@@ -26,7 +26,7 @@ import language.dynamics
 import scala.collection.mutable.{ListBuffer, HashMap}
 
 /** Some useful JSON shortcuts */
-trait JsonExtraction { this: BaseIo =>
+trait JsonProcessing extends ExceptionHandling with Linking with Misc {
 
   case class ParseException(source: String, line: Option[Int] = None, column: Option[Int] = None)
       extends Exception {
@@ -215,11 +215,11 @@ trait JsonExtraction { this: BaseIo =>
           toMap.mapValues(implicitly[JsonExtractor[T]].cast))
   }
 
-  @annotation.implicitNotFound("Cannot extract type ${T} from JSON.")
+  @implicitNotFound("Cannot extract type ${T} from JSON.")
   class JsonExtractor[T](val cast: Any => T)
   implicit val nullExtractor: JsonExtractor[Json] = new JsonExtractor[Json](x => new Json(x))
 
-  class Json(private[JsonExtraction] val json: Any, path: List[Either[Int, String]] = Nil)
+  class Json(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {
 
     /** Assumes the Json object is wrapping a List, and extracts the `i`th element from the list */
@@ -239,7 +239,7 @@ trait JsonExtraction { this: BaseIo =>
     def selectDynamic(key: String): Json =
       new Json(json, Right(key) :: path)
    
-    private[JsonExtraction] def normalize: Any = {
+    private[JsonProcessing] def normalize: Any = {
       yCombinator[(Any, List[Either[Int, String]]), Any] { fn => v => v match {
         case (j, Nil) => j
         case (j, Left(i) :: t) =>
@@ -270,7 +270,7 @@ trait JsonExtraction { this: BaseIo =>
       try Json.format(Some(normalize), 0) catch { case e: JsonGetException => "<error>" }
   }
 
-  class JsonBuffer(private[JsonExtraction] val json: Any, path: List[Either[Int, String]] = Nil)
+  class JsonBuffer(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {
     /** Updates the element `key` of the JSON object with the value `v` */
     def updateDynamic(key: String)(v: Any): Unit =
@@ -303,7 +303,7 @@ trait JsonExtraction { this: BaseIo =>
     def selectDynamic(key: String): JsonBuffer =
       new JsonBuffer(json, Right(key) :: path)
    
-    private[JsonExtraction] def normalize(array: Boolean, modify: Boolean): Any = {
+    private[JsonProcessing] def normalize(array: Boolean, modify: Boolean): Any = {
       yCombinator[(Any, List[Either[Int, String]]), Any] { fn => v => v match {
         case (j, Nil) => j
         case (j, Left(i) :: t) =>

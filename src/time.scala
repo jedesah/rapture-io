@@ -25,7 +25,7 @@ import rapture._
 import java.util.Calendar
 import java.text.SimpleDateFormat
 
-trait Time {
+trait Timing {
 
   // FIXME: Lots of work to be done making this useful
   def decimalFormat(dp: Int) = new DecimalFormat("0."+"0"*dp)

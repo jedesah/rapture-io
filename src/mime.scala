@@ -24,7 +24,7 @@ import rapture._
 
 import scala.collection.mutable.HashMap
 
-trait Mime {
+trait MimeTyping {
 
   /** Provides a typesafe list of MIME types, including mappings from common file extensions. This
     * list was produced from the public domain list of MIME types at

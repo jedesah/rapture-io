@@ -22,12 +22,44 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Exceptions { this: BaseIo =>
+import language.higherKinds
+
+import scala.reflect.ClassTag
+
+trait ExceptionHandling {
+  @implicitNotFound(msg = "No exception handler was available. Please import "+
+      "strategy.ThrowExceptions or strategy.ReturnEither.")
+  trait ExceptionHandler {
+  
+    type ![_ <: Exception, _]
+
+    def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): ![E, T]
+  }
+
+  object strategy {
+    implicit object ThrowExceptions extends ExceptionHandler {
+      type ![E <: Exception, T] = T
+      
+      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): T = t
+    }
+
+    implicit object ReturnEither extends ExceptionHandler {
+      type ![E <: Exception, T] = Either[E, T]
+      
+      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Either[E, T] =
+        try Right(t) catch {
+          case e: E => Left(e)
+          case e: Throwable => throw e
+        }
+      
+    }
+  }
+
   sealed trait IoException extends Exception
 
   sealed trait GeneralIoExceptions extends IoException
   sealed trait HttpExceptions extends IoException
-  
+
   case class InterruptedIo() extends GeneralIoExceptions
 
   sealed trait NotFoundExceptions extends GeneralIoExceptions
@@ -42,3 +74,4 @@ trait Exceptions { this: BaseIo =>
   case class MissingValueException() extends JsonGetException
 
 }
+

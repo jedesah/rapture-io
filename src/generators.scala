@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Generation { this: BaseIo =>
+trait Generating {
 
   object Generator {
 

@@ -22,14 +22,10 @@ License.
 package rapture.implementation
 import rapture._
 
-import language.implicitConversions
-
 import java.io._
 import java.net._
 
-import annotation.implicitNotFound
-
-trait LowerPriorityWrappers { this: BaseIo =>
+trait LowerPriorityJavaWrapping extends ExceptionHandling with Encodings with Misc { this: Streaming =>
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding):
       StreamReader[T, String] = new StreamReader[T, String] {
@@ -45,7 +41,7 @@ trait LowerPriorityWrappers { this: BaseIo =>
 
 }
 
-trait LowPriorityWrappers extends LowerPriorityWrappers { this: BaseIo =>
+trait LowPriorityJavaWrapping extends LowerPriorityJavaWrapping { this: Streaming =>
  
   implicit val defaultExceptionHandler = strategy.ThrowExceptions
 
@@ -88,7 +84,7 @@ trait LowPriorityWrappers extends LowerPriorityWrappers { this: BaseIo =>
 /** Provides wrappers around Java's standard stream classes: `InputStream`, `OutputStream`, `Reader`
   * `Writer`, generalising them into `Input`s and `Output`s parameterised by the type of data they
   * carry. */
-trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
+trait JavaWrapping extends LowPriorityJavaWrapping { this: Streaming =>
 
   /** Wraps a `java.io.Reader` as an `Input[Char]` */
   class CharInput(in: Reader) extends Input[Char] {
@@ -268,4 +264,23 @@ trait Wrappers extends LowPriorityWrappers { this: BaseIo =>
       def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
         eh.except(new CharInput(new InputStreamReader(s, encoding.name)))
     }
+
+  class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
+      StreamWriter[T, Byte] {
+    def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
+      eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  }
+
+  class JavaOutputStreamAppender[T](val getOutputStream: T => OutputStream) extends
+      StreamAppender[T, Byte] {
+    def appendOutput(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
+      eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  }
+
+  class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
+      StreamReader[T, Byte] {
+    def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
+      eh.except(new ByteInput(new BufferedInputStream(getInputStream(t))))
+  }
+
 }

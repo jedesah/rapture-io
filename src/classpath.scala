@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Classpath { this: BaseIo =>
+trait Classpath extends Urls with Streaming {
 
   class ClasspathUrl(elements: Seq[String]) extends Url[ClasspathUrl](elements, Map()) {
     def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath) =
