@@ -102,7 +102,8 @@ trait Streams { this: BaseIo =>
   }
 
   implicit def inputStreamReader[T] = new StreamReader[Input[T], T] {
-    def input(in: Input[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] = eh.except(in) 
+    def input(in: Input[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] =
+      eh.except(in) 
   }
 
   /** Provides methods for URLs which can be read as streams */

@@ -120,12 +120,15 @@ trait CommandLine { this: BaseIo =>
         def summary: String
         def specifiedCompletions: List[String]
         def completions: Completion =
-          if(specifiedCompletions != null) Completions(specifiedCompletions) else implicitly[CliParser[T]].completions
+          if(specifiedCompletions != null) Completions(specifiedCompletions)
+          else implicitly[CliParser[T]].completions
         
         def zshCompletions =
-          if(shortName == ' ') List("(--"+longName+")--"+longName+"["+summary.replaceAll(" ", "+")+"]")
-          else List("(--"+longName+"+-"+shortName+")--"+longName+"["+summary.replaceAll(" ", "+")+"]",
-              "(--"+longName+"+-"+shortName+")-"+shortName+"["+summary.replaceAll(" ", "+")+"]")
+          if(shortName == ' ')
+            List("(--"+longName+")--"+longName+"["+summary.replaceAll(" ", "+")+"]")
+          else List("(--"+longName+"+-"+shortName+")--"+longName+"["+summary.replaceAll(" ", "+")+
+              "]", "(--"+longName+"+-"+shortName+")-"+shortName+"["+summary.replaceAll(" ", "+")+
+              "]")
       }
       
       val opts: HashMap[String, Opt[_]] = HashMap[String, Opt[_]]()
@@ -169,7 +172,9 @@ trait CommandLine { this: BaseIo =>
         def summary = help
         def specifiedCompletions = _completions
 
-        def apply(): T = implicitly[CliParser[T]].parse(parsing._1(this).getOrElse(throw CliException(unspecifiedMsg(longName)))).getOrElse(throw CliException(unparsableMsg(implicitly[CliParser[T]].name, parsing._1(this).get)))
+        def apply(): T = implicitly[CliParser[T]].parse(parsing._1(this).getOrElse(
+            throw CliException(unspecifiedMsg(longName)))).getOrElse(throw CliException(
+            unparsableMsg(implicitly[CliParser[T]].name, parsing._1(this).get)))
         
         opts(longName) = this
         if(shortName != ' ') shortOpts(shortName) = this
@@ -264,9 +269,9 @@ trait CommandLine { this: BaseIo =>
 
     var subcommands: ListMap[String, Action[_]] = ListMap()
 
-    def subcommand[T <: Opts](cmd: String, summary: String, opts: T, hidden: Boolean = false)(block: T => String) = {
+    def subcommand[T <: Opts](cmd: String, summary: String, opts: T, hidden: Boolean = false)
+        (block: T => String) =
       subcommands += cmd -> new Action[T](opts, summary, block, hidden)
-    }
 
     private var defaultCmd: () => String = null
     

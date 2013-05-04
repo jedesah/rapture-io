@@ -105,7 +105,9 @@ trait Time {
         val Date(date) = n
         val c = Calendar.getInstance
         c.setTimeInMillis(n)
-        Some(DateTime(date, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), c.get(Calendar.SECOND)))
+        
+        Some(DateTime(date, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE),
+            c.get(Calendar.SECOND)))
       }
     }
 

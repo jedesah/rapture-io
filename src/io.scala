@@ -76,10 +76,12 @@ class BaseIo extends Paths with Streams with Urls with Files with Net with Socke
   }
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
-  implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f => new FileInputStream(f.javaFile))
+  implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
+      new FileInputStream(f.javaFile))
 
   /** Type class object for reading `Byte`s from `HttpUrl`s */
-  implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](_.javaConnection.getInputStream)
+  implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](
+      _.javaConnection.getInputStream)
 
   /** Type class object for writing `Byte`s to `FileUrl`s */
   implicit object FileStreamByteWriter extends StreamWriter[FileUrl, Byte] {

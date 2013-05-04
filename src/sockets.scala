@@ -32,13 +32,16 @@ trait Sockets { this: BaseIo =>
     *
     * @usecase def listen(port: Int): Input[Byte]
     * @param port the port to listen to */
-  def listen[K](port: Int)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K], eh: ExceptionHandler): eh.![Exception, (Input[K], Output[K])] = eh.except {
+  def listen[K](port: Int)(implicit ib: InputBuilder[InputStream, K],
+      ob: OutputBuilder[OutputStream, K], eh: ExceptionHandler):
+      eh.![Exception, (Input[K], Output[K])] = eh.except {
     val sock = new java.net.ServerSocket(port)
     val sock2 = sock.accept()
     (ib.input(sock2.getInputStream), ob.output(sock2.getOutputStream))
   }
 
-  def tcpHandle[K](port: Int)(action: (Input[K], Output[K]) => Unit)(implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K]): Unit = {
+  def tcpHandle[K](port: Int)(action: (Input[K], Output[K]) => Unit)
+      (implicit ib: InputBuilder[InputStream, K], ob: OutputBuilder[OutputStream, K]): Unit = {
     val sock = new java.net.ServerSocket(port)
     while(true) {
       val sock2 = sock.accept()
@@ -70,7 +73,10 @@ trait Sockets { this: BaseIo =>
     def apply(hostname: String, svc: TcpService): SocketUri = new SocketUri(hostname, svc.portNo)
   }
 
-  implicit object SocketStreamByteReader extends JavaInputStreamReader[SocketUri](_.javaSocket.getInputStream)
-  implicit object SocketStreamByteWriter extends JavaOutputStreamWriter[SocketUri](_.javaSocket.getOutputStream)
+  implicit object SocketStreamByteReader extends
+      JavaInputStreamReader[SocketUri](_.javaSocket.getInputStream)
+  
+  implicit object SocketStreamByteWriter extends
+      JavaOutputStreamWriter[SocketUri](_.javaSocket.getOutputStream)
   
 }

@@ -72,12 +72,16 @@ trait Finance { this: BaseIo =>
     val half = 0.5/div
 
     def this(amount: Double) =
-      this((amount*math.pow(10, implicitly[Currency[T]].dp).toInt + 0.5).toInt/math.pow(10, implicitly[Currency[T]].dp).toInt, (amount*math.pow(10, implicitly[Currency[T]].dp).toInt + 0.5).toInt%math.pow(10, implicitly[Currency[T]].dp).toInt)
+      this((amount*math.pow(10, implicitly[Currency[T]].dp).toInt + 0.5).toInt/math.pow(10,
+          implicitly[Currency[T]].dp).toInt, (amount*math.pow(10,
+          implicitly[Currency[T]].dp).toInt + 0.5).toInt%math.pow(10,
+          implicitly[Currency[T]].dp).toInt)
 
     def pad(x: Int) = ("0"*(implicitly[Currency[T]].dp - x.toString.length))+x
 
     override def toString = implicitly[Currency[T]].prefix+amountString
-    def amountString = (if(major < 0) "-"+(-major - 1)+"."+pad(div - minor) else major+"."+pad(minor))
+    def amountString =
+      if(major < 0) "-"+(-major - 1)+"."+pad(div - minor) else major+"."+pad(minor)
 
     def +(m: Money[T]): Money[T] =
       Money[T](major + m.major + (minor + m.minor)/div, (minor + m.minor)%div)

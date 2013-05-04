@@ -35,12 +35,14 @@ trait TestFramework extends CommandLineExtras {
         (t._1 + r._1) -> (t._2 + r._2)
       }
       hr("=")
-      testOutput((if(color) Ansi.Bold else "")+"  TOTAL: "+total._1+"/"+total._2+" tests passed ("+(100*total._1/total._2)+"%)"+(if(color) Ansi.Normal else ""))
+      testOutput((if(color) Ansi.Bold else "")+"  TOTAL: "+total._1+"/"+total._2+" tests passed ("+
+          (100*total._1/total._2)+"%)"+(if(color) Ansi.Normal else ""))
       hr("=")
     }
 
     def testOutput(s: String): Unit = println(s)
-    protected def hr(c: String) = testOutput((if(color) Ansi.Black+Ansi.Bold else "")+(c*80)+(if(color) Ansi.Normal else ""))
+    protected def hr(c: String) = testOutput((if(color) Ansi.Black+Ansi.Bold else "")+(c*80)+
+        (if(color) Ansi.Normal else ""))
     
     def color: Boolean = true
 
@@ -66,14 +68,16 @@ trait TestFramework extends CommandLineExtras {
         }
         tearDown.foreach(_())
         hr(" ")
-        testOutput("  "+successes+"/"+tests.length+" tests passed ("+(100*successes/List(1, tests.length).max)+"%)")
+        testOutput("  "+successes+"/"+tests.length+" tests passed ("+(100*successes/List(1,
+            tests.length).max)+"%)")
         testOutput("")
         (successes, tests.length)
       }
     
       def test[T](blk: => T) = new TestDef[T](blk)
       class TestDef[T](blk: => T) {
-        def throws[T <: Throwable](implicit mf: Manifest[T]): Test[Boolean] = define(new Test[Boolean] {
+        def throws[T <: Throwable](implicit mf: Manifest[T]): Test[Boolean] =
+          define(new Test[Boolean] {
           
           def run(): Boolean = try { blk; false } catch {
             case e: T => true

@@ -45,7 +45,8 @@ trait Ftp { this: BaseIo =>
       that.isInstanceOf[FtpPathRoot] && hostname == that.asInstanceOf[FtpPathRoot].hostname
   }
 
-  class FtpUrl(val pathRoot: NetPathRoot[FtpUrl], val elems: Seq[String]) extends Url[FtpUrl](elems, Map()) with NetUrl[FtpUrl] {
+  class FtpUrl(val pathRoot: NetPathRoot[FtpUrl], val elems: Seq[String]) extends
+      Url[FtpUrl](elems, Map()) with NetUrl[FtpUrl] {
     def makePath(ascent: Int, xs: Seq[String], afterPath: AfterPath) =
       new FtpUrl(pathRoot, elements)
   

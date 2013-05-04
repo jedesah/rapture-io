@@ -130,8 +130,10 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = eh.except {
-          post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(implicitly[PostType[C]], strategy.ThrowExceptions)
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] =
+      Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = eh.except {
+          post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(
+          implicitly[PostType[C]], strategy.ThrowExceptions)
         }
     
     /** Sends an HTTP post to this URL.
@@ -141,7 +143,8 @@ trait Net { this: BaseIo =>
       *        defaulting to no authentication.
       * @return the HTTP response from the remote host */
     def post[C: PostType](content: C, authenticate: Option[(String, String)] = None,
-        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(), method: String = "POST")(implicit eh: ExceptionHandler):
+        ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(),
+        method: String = "POST")(implicit eh: ExceptionHandler):
         eh.![HttpExceptions, HttpResponse] = eh.except {
 
       val conn: URLConnection = new URL(toString).openConnection()
@@ -248,7 +251,8 @@ trait Net { this: BaseIo =>
     private val UrlRegex = """(https?):\/\/([\.\-a-z0-9]+)(:[1-9][0-9]*)?\/?(.*)""".r
 
     /** Parses a URL string into an HttpUrl */
-    def parse(s: String)(implicit eh: ExceptionHandler): eh.![Exception, HttpUrl] = eh.except { s match {
+    def parse(s: String)(implicit eh: ExceptionHandler): eh.![Exception, HttpUrl] =
+        eh.except { s match {
       case UrlRegex(scheme, server, port, path) =>
         val rp = new SimplePath(path.split("/"), Map())
         scheme match {
