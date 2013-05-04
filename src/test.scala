@@ -171,7 +171,10 @@ object Tests extends TestApp {
     val getInt = test { Json.parse(src).int.get[Int] } yields 78
     val navigateObj = test { Json.parse(src).obj.a.get[String] } yields "A"
     val getList = test { Json.parse(src).array.get[List[Int]] } yields List(1, 2, 3)
-    
+  
+    val wrongType = test({ Json.parse(src).string.get[Int] }).throws[WrongTypeException]
+    val missingValue = test({ Json.parse(src).missing.get[String] }).throws[MissingValueException]
+
     val extract1 = test {
       val json""" { "string": $x } """ = Json.parse(src)
       x.get[String]
@@ -190,12 +193,12 @@ object Tests extends TestApp {
     val extract4 = test({
       val json""" { "array": $z } """ = Json.parse(src)
       z.get[String]
-    }).throws[Exception]
+    }).throws[WrongTypeException]
     
     val extract5 = test({
       val json""" { "foo": $x } """ = Json.parse(src)
       x
-    }).throws[Exception]
+    }).throws[MatchError]
 
     val extract6 = test {
       val json""" { "obj": { "b": $x } } """ = Json.parse(src)
@@ -210,7 +213,8 @@ object Tests extends TestApp {
     val extract8 = test({
       val json""" { "obj": { "a": "C", "b": $x } } """ = Json.parse(src)
       x.get[String]
-    }).throws[Exception]
+    }).throws[MatchError]
+
   }
 
 }

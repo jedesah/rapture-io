@@ -134,6 +134,8 @@ trait JsonExtraction { this: BaseIo =>
 
     def unapply(json: Any): Option[Json] = Some(new Json(json))
 
+    def format(json: Json): String = format(Some(json.json), 0)
+    
     /** Formats the JSON object for multi-line readability. */
     def format(json: Option[Any], ln: Int): String = {
       val indent = " "*ln
@@ -156,6 +158,8 @@ trait JsonExtraction { this: BaseIo =>
         case _ => "undefined"
       }
     }
+
+    def serialize(json: Json): String = serialize(Some(json.normalize))
 
     def serialize(json: Option[Any]): String = {
       json match {
@@ -252,6 +256,7 @@ trait JsonExtraction { this: BaseIo =>
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
         eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(normalize) catch {
+          case e: MissingValueException => throw e
           case e: Exception => throw new WrongTypeException()
         })
 
