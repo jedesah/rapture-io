@@ -35,4 +35,10 @@ trait Exceptions { this: BaseIo =>
   case class NotFound() extends NotFoundExceptions with HttpExceptions
 
   case class Forbidden() extends HttpExceptions
+
+  sealed trait JsonGetException extends RuntimeException
+
+  case class WrongTypeException() extends JsonGetException
+  case class MissingValueException() extends JsonGetException
+
 }

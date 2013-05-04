@@ -101,7 +101,8 @@ trait JsonExtraction { this: BaseIo =>
           }
         extract(jp.parse(sc.parts.mkString("null")).get, ^)
         val extracts = paths.reverse.map(json.extract)
-        if(extracts.exists(_.json == null)) None else Some(extracts)
+        if(extracts.exists(_.json == null)) None
+        else Some(extracts map { x => new Json(x.normalize) })
       } catch { case e: Exception => None }
     }
   }
@@ -155,6 +156,27 @@ trait JsonExtraction { this: BaseIo =>
         case _ => "undefined"
       }
     }
+
+    def serialize(json: Option[Any]): String = {
+      json match {
+        case Some(o: scala.collection.Map[_, _]) =>
+          List("{", o.keys map { k => "\""+k+"\":"+serialize(o.get(k)) } mkString
+              ",", "}").mkString
+        case Some(a: Seq[_]) =>
+          List("[", a map { v => serialize(Some(v)) } mkString(","),
+              "]") mkString ""
+        case Some(s: String) =>
+          "\""+s.replaceAll("\\\\", "\\\\\\\\").replaceAll("\n", "\\\\n").replaceAll("\"",
+              "\\\\\"")+"\""
+        case Some(n: Int) => n.toString
+        case Some(n: Number) => n.toString
+        case Some(v: Boolean) => if(v) "true" else "false"
+        case Some(j: Json) => serialize(Some(j.json))
+        case Some(j: MutableJson) => serialize(Some(j.json))
+        case None => "null"
+        case _ => "undefined"
+      }
+    }
     
   }
 
@@ -187,11 +209,13 @@ trait JsonExtraction { this: BaseIo =>
   class JsonExtractor[T](val cast: Any => T)
   implicit val nullExtractor: JsonExtractor[Json] = new JsonExtractor[Json](x => new Json(x))
 
-  class Json(private[JsonExtraction] val json: Any) extends Dynamic {
+  class Json(private[JsonExtraction] val json: Any, path: List[Either[Int, String]] = Nil)
+      extends Dynamic {
 
     /** Assumes the Json object is wrapping a List, and extracts the `i`th element from the list */
     def apply(i: Int): Json =
-      new Json(if(json == null) null else json.asInstanceOf[List[Any]].apply(i))
+      new Json(json, Left(i) :: path)
+      //new Json(if(json == null) null else json.asInstanceOf[List[Any]].apply(i))
    
     /** Combines a `selectDynamic` and an `apply`.  This is necessary due to the way dynamic
       * application is expanded. */
@@ -204,20 +228,41 @@ trait JsonExtraction { this: BaseIo =>
     
     /** Assumes the Json object wraps a `Map`, and extracts the element `key`. */
     def selectDynamic(key: String): Json =
-      new Json(if(json == null) null else json.asInstanceOf[Map[String, Any]].get(key).getOrElse(
-          null))
+      new Json(json, Right(key) :: path)
+      //new Json(if(json == null) null else json.asInstanceOf[Map[String, Any]].get(key).getOrElse(
+      //    null))
    
+    private[JsonExtraction] def normalize: Any = {
+      yCombinator[(Any, List[Either[Int, String]]), Any] { fn => v => v match {
+        case (j, Nil) => j
+        case (j, Left(i) :: t) =>
+          fn(try j.asInstanceOf[List[Any]](i) catch {
+            case e: ClassCastException => throw MissingValueException()
+            case e: IndexOutOfBoundsException => throw MissingValueException()
+          }, t)
+        case (j, Right(k) :: t) =>
+          fn(try j.asInstanceOf[Map[String, Any]](k) catch {
+            case e: ClassCastException => throw MissingValueException()
+            case e: NoSuchElementException => throw MissingValueException()
+          }, t)
+          
+      } } (json -> path.reverse)
+    }
+
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
-    def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler): eh.![Exception, T] =
-      eh.except(jsonExtractor.cast(json))
+    def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
+        eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(normalize) catch {
+          case e: Exception => throw new WrongTypeException()
+        })
 
     /** Assumes the Json object is wrapping a List, and returns the length */
-    def length = json.asInstanceOf[List[Json]].length
+    //def length = json.asInstanceOf[List[Json]].length
 
     /** Assumes the Json object is wrapping a List, and returns an iterator over the list */
     def iterator: Iterator[Json] = json.asInstanceOf[List[Json]].iterator
 
-    override def toString = Json.format(Some(json), 0)
+    override def toString =
+      try Json.format(Some(normalize), 0) catch { case e: JsonGetException => "<error>" }
   }
 
   class MutableJson(private[JsonExtraction] val json: Any) extends Dynamic {
