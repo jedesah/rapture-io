@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Ips {
+trait IpHandling {
 
   object Ip4 {
 
