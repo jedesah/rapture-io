@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Ftp extends Urls with Net with Streaming {
+trait Ftp extends UrlHandling with Net with Streaming {
 
   object Ftp extends Scheme[FtpUrl] {
     def schemeName = "ftp"

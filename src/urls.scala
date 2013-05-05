@@ -26,7 +26,7 @@ import java.io._
 import java.net._
 
 /** Provides framework classes and traits for handling general URLs. */
-trait Urls extends Linking {
+trait UrlHandling extends Linking {
 
   /** Represents a generic URL */
   abstract class Url[+UrlType <: Url[UrlType]](elements: Seq[String], afterPath: AfterPath) extends

@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-trait Codecs extends Encodings {
+trait Codecs extends Encodings with ExceptionHandling {
 
   /** Standard Base64 codec. */
   object Base64 extends Base64Codec
@@ -118,62 +118,62 @@ trait Codecs extends Encodings {
       * does not tolerate any other illegal characters, including line breaks at
       * positions other than 76-char boundaries, in which case the result will
       * be garbage. */
-    def decode(data: String): Array[Byte] = {
-      
-      val in = data.toCharArray()
+    def decode(data: String)(implicit eh: ExceptionHandler): eh.![Exception, Array[Byte]] =
+      eh.except {
+        val in = data.toCharArray()
 
-      val inLen = in.length
-      
-      if(inLen == 0) new Array[Byte](0) else {
+        val inLen = in.length
         
-        val padding = if(in(inLen - 1) == padChar) (if(in(inLen - 2) == padChar) 2 else 1) else 0
-
-        // FIXME: This doesn't seem to accommodate different kinds of linebreak
-        val lineBreaks = if(inLen > 76) (if(in(76) == '\r') inLen/78 else 0) << 1 else 0
-        val outLen = ((inLen - lineBreaks) * 6 >> 3) - padding
-        val out = new Array[Byte](outLen)
-
-        var inPos = 0
-        var outPos = 0
-        var blockCount = 0
-        
-        val evenLen = (outLen/3)*3
-        
-        while(outPos < evenLen) {
+        if(inLen == 0) new Array[Byte](0) else {
           
-          val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
-              Decodabet(in(inPos + 2)) << 6 | Decodabet(in(inPos + 3))
+          val padding = if(in(inLen - 1) == padChar) (if(in(inLen - 2) == padChar) 2 else 1) else 0
+
+          // FIXME: This doesn't seem to accommodate different kinds of linebreak
+          val lineBreaks = if(inLen > 76) (if(in(76) == '\r') inLen/78 else 0) << 1 else 0
+          val outLen = ((inLen - lineBreaks) * 6 >> 3) - padding
+          val out = new Array[Byte](outLen)
+
+          var inPos = 0
+          var outPos = 0
+          var blockCount = 0
           
-          inPos += 4
-
-          out(outPos) = (block >> 16).toByte
-          out(outPos + 1) = (block >> 8).toByte
-          out(outPos + 2) = block.toByte
-          outPos += 3
-
-          if(lineBreaks > 0) {
+          val evenLen = (outLen/3)*3
+          
+          while(outPos < evenLen) {
             
-            blockCount += 1
+            val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
+                Decodabet(in(inPos + 2)) << 6 | Decodabet(in(inPos + 3))
             
-            if(blockCount == 19) {
-              inPos += 2
-              blockCount = 0
+            inPos += 4
+
+            out(outPos) = (block >> 16).toByte
+            out(outPos + 1) = (block >> 8).toByte
+            out(outPos + 2) = block.toByte
+            outPos += 3
+
+            if(lineBreaks > 0) {
+              
+              blockCount += 1
+              
+              if(blockCount == 19) {
+                inPos += 2
+                blockCount = 0
+              }
             }
           }
+
+          if(outPos < outLen) {
+            val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
+                (if(inPos + 2 < inLen - padding) Decodabet(in(inPos + 2)) << 6 else 0)
+
+            out(outPos) = (block >> 16).toByte
+            
+            if(outPos + 1 < outLen) out(outPos + 1) = (block >> 8).toByte
+          }
+
+          out
         }
-
-        if(outPos < outLen) {
-          val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
-              (if(inPos + 2 < inLen - padding) Decodabet(in(inPos + 2)) << 6 else 0)
-
-          out(outPos) = (block >> 16).toByte
-          
-          if(outPos + 1 < outLen) out(outPos + 1) = (block >> 8).toByte
-        }
-
-        out
       }
-    }
 
     /** Encodes the input byte array as an array of characters */
     def apply(in: Array[Byte]): String = encode(in)
@@ -181,4 +181,17 @@ trait Codecs extends Encodings {
     /** Decodes the input character array into an array of bytes. */
     def unapply(in: String): Option[Array[Byte]] = Some(decode(in))
   }
+
+  object Hex {
+    def encode(a: Array[Byte]): String =
+      new String(a flatMap { n => Array((n & 255) >> 4 & 15, n & 15) } map { _ + 48 } map { i =>
+        (if(i > 57) i + 39 else i).toChar })
+
+    def decode(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Array[Byte]] = eh.except {
+      (if(s.length%2 == 0) s else "0"+s).to[Array].grouped(2).to[Array] map { case Array(l, r) =>
+        (((l - 48)%39 << 4) + (r - 48)%39).toByte
+      }
+    }
+  }
+
 }

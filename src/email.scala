@@ -27,7 +27,7 @@ import javax.mail.internet._
 import javax.activation._
 import scala.xml._
 
-trait Email extends Linking with MimeTyping {
+trait Emailing extends Linking with MimeTyping {
 
   object Mailto extends Scheme[MailtoUri] {
     def schemeName = "mailto"

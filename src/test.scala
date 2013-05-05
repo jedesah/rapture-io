@@ -22,9 +22,11 @@ License.
 package tests.rapture.io
 
 import rapture.io._
+import strategy.ThrowExceptions
 
 object Tests extends TestApp {
 
+  
   val generators = new Suite("generators.scala") {
 
     val stopOnZero = test {

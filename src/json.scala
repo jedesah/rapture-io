@@ -62,20 +62,21 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
   @inline implicit class JsonStrings(sc: StringContext)(implicit jp: JsonParser) extends {
     object json {
       /** Creates a new interpolated JSON object. */
-      def apply(exprs: Any*)(implicit eh: ExceptionHandler): eh.![Exception, Json] = eh.except {
-        val sb = new StringBuilder
-        val textParts = sc.parts.iterator
-        val expressions = exprs.iterator
-        sb.append(textParts.next())
-        while(textParts.hasNext) {
-          sb.append(expressions.next match {
-            case s: String => "\""+s+"\""
-            case a => a.toString
-          })
-          sb.append(textParts.next)
+      def apply(exprs: Any*)(implicit eh: ExceptionHandler): eh.![ParseException, Json] =
+        eh.except {
+          val sb = new StringBuilder
+          val textParts = sc.parts.iterator
+          val expressions = exprs.iterator
+          sb.append(textParts.next())
+          while(textParts.hasNext) {
+            sb.append(expressions.next match {
+              case s: String => "\""+s+"\""
+              case a => a.toString
+            })
+            sb.append(textParts.next)
+          }
+          Json.parse(sb.toString)(jp, strategy.ThrowExceptions)
         }
-        Json.parse(sb.toString)(jp, strategy.ThrowExceptions)
-      }
 
       /** Extracts values in the structure specified from parsed JSON.  Each element in the JSON
         * structure is compared with the JSON to extract from.  Broadly speaking, elements whose

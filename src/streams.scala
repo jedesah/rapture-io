@@ -26,7 +26,7 @@ import java.io._
 import java.net._
 import scala.reflect._
 
-trait Streaming extends JavaWrapping with Digesting with Urls with Net {
+trait Streaming extends JavaWrapping with Digesting with UrlHandling with Net {
 
   /** Safely closes a stream after processing */
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit) = {

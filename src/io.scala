@@ -39,11 +39,11 @@ import java.net._
   * `FileUrl`s should be read and written and  `HttpUrl`s should be read as
   * byte-streams */
 class BaseIo extends FileHandling with
-    Extracting with CollectionExtras with
-    Multipart with JsonProcessing with Encrypting with Encodings with
+    Extracting with
+    MimeHandling with JsonProcessing with Encrypting with Encodings with
     Ips with Logging with MimeTyping with Misc with Linking with
-    Classpath with CommandLine with TableFormatting with Finance with
-    Hex with Ftp with Email with Testing with Generating {
+    ClasspathHandling with CommandLine with TableFormatting with Finance with
+    Ftp with Emailing with Testing with Generating {
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
@@ -121,10 +121,3 @@ class BaseIo extends FileHandling with
 }
 
 object io extends BaseIo
-
-/*class Iof(implicit ec: ExecutionContext) extends BaseIo {
-
-  type ![E <: Exception, T] = Future[T]
-  @inline protected def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Future[T] =
-    Future { t }
-}*/

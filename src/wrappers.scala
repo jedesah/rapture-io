@@ -42,8 +42,6 @@ trait LowerPriorityJavaWrapping extends ExceptionHandling with Encodings with Mi
 }
 
 trait LowPriorityJavaWrapping extends LowerPriorityJavaWrapping { this: Streaming =>
- 
-  implicit val defaultExceptionHandler = strategy.ThrowExceptions
 
   /** Type class object for creating an Input[Byte] from a Java InputStream */
   implicit object InputStreamBuilder extends InputBuilder[InputStream, Byte] {

@@ -19,26 +19,11 @@ implied. See the License for the specific language governing permissions and lim
 License.
 ***************************************************************************************************/
 
-package rapture.implementation
-import rapture._
+package object rapture {
 
-trait ClasspathHandling extends UrlHandling with Streaming {
+  type implicitNotFound = annotation.implicitNotFound
 
-  class ClasspathUrl(elements: Seq[String]) extends Url[ClasspathUrl](elements, Map()) {
-    def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath) =
-      new ClasspathUrl(elements)
-    
-    def schemeSpecificPart = elements.mkString("//", "/", "")
-    val pathRoot = Classpath
-  }
+  implicit val implicitConversions = language.implicitConversions
 
-  object Classpath extends PathRoot[ClasspathUrl] with Scheme[ClasspathUrl] {
-    def schemeName = "classpath"
-    def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath) =
-      new ClasspathUrl(elements)
-    def scheme = Classpath
-  }
-
-  implicit object ClasspathStreamByteReader extends JavaInputStreamReader[ClasspathUrl](url =>
-      this.getClass.getClassLoader.getResourceAsStream(url.pathString.substring(1)))
 }
+
