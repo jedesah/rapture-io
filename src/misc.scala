@@ -22,7 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
-import scala.collection.mutable._
+import scala.collection.mutable.HashMap
 import scala.collection.generic._
 
 import language.higherKinds

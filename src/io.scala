@@ -38,7 +38,10 @@ import java.net._
   * of stream over another without explicitly specifying a type parameter.  Specifically,
   * `FileUrl`s should be read and written and  `HttpUrl`s should be read as
   * byte-streams */
-class BaseIo extends FileHandling with Extracting with MimeHandling with JsonProcessing with Encrypting with Encodings with IpHandling with Logging with MimeTyping with Misc with Linking with ClasspathHandling with Shelling with TableFormatting with Finance with FtpHandling with Emailing with Testing with Generating {
+class BaseIo extends FileHandling with Extracting with MimeHandling with JsonProcessing with
+    Encrypting with Encodings with IpHandling with Logging with MimeTyping with Misc with Linking
+    with ClasspathHandling with Shelling with TableFormatting with Finance with FtpHandling with
+    Emailing with Generating with Testing {
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
