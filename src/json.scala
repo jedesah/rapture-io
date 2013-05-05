@@ -268,7 +268,9 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
     def iterator: Iterator[Json] = json.asInstanceOf[List[Json]].iterator
 
     override def toString =
-      try Json.format(Some(normalize), 0) catch { case e: JsonGetException => "<error>" }
+      try Json.format(Some(normalize), 0) catch {
+        case e: ExceptionHandling#JsonGetException => "<error>"
+      }
   }
 
   class JsonBuffer(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
@@ -339,7 +341,7 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
 
     override def toString =
       try Json.format(Some(normalize(false, false)), 0) catch {
-        case e: JsonGetException => "<error>"
+        case e: ExceptionHandling#JsonGetException => "<error>"
       }
   }
 }

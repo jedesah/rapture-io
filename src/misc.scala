@@ -25,6 +25,8 @@ import rapture._
 import scala.collection.mutable._
 import scala.collection.generic._
 
+import language.higherKinds
+
 trait Misc {
 
   /** Provides a simple class mixin for creating a list of items from which items can be looked up.
