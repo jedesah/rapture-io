@@ -113,7 +113,7 @@ trait Slurping extends LowPrioritySlurping {
         sr: StreamReader[UrlType, Data], mf: ClassTag[Data]): eh.![Exception, accumulatorBuilder.Out] =
       eh.except {
         val c = accumulatorBuilder.make()
-        url.input[Data](sr, strategy.ThrowExceptions) pumpTo c
+        url.input[Data](sr, strategy.throwExceptions) pumpTo c
 
         c.buffer
       }

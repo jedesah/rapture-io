@@ -30,7 +30,7 @@ import scala.concurrent._
 
 trait ExceptionHandling {
   @implicitNotFound(msg = "No exception handler was available. Please import "+
-      "strategy.ThrowExceptions or strategy.ReturnEither.")
+      "strategy.throwExceptions or strategy.captureExceptions.")
   trait ExceptionHandler {
     type ![_ <: Exception, _]
     def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): ![E, T]
@@ -38,12 +38,14 @@ trait ExceptionHandling {
 
   object strategy {
     
-    implicit object ThrowExceptions extends ExceptionHandler {
+    class ThrowExceptions extends ExceptionHandler {
       type ![E <: Exception, T] = T
       def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): T = t
     }
 
-    implicit object ReturnEither extends ExceptionHandler {
+    implicit def throwExceptions = new ThrowExceptions
+
+    class CaptureExceptions extends ExceptionHandler {
       type ![E <: Exception, T] = Either[E, T]
       def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Either[E, T] =
         try Right(t) catch {
@@ -53,13 +55,15 @@ trait ExceptionHandling {
       
     }
 
-    implicit def ReturnFutures(implicit ec: ExecutionContext) = new ExceptionHandler {
+    implicit def captureExceptions = new CaptureExceptions
+
+    implicit def returnFutures(implicit ec: ExecutionContext) = new ExceptionHandler {
       type ![E <: Exception, T] = Future[T]
       def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Future[T] = Future { t }
     }
   }
 
-  implicit protected val defaultExceptionHandler = strategy.ThrowExceptions
+  implicit protected val defaultExceptionHandler = strategy.throwExceptions
   
   sealed trait IoException extends Exception
 

@@ -90,7 +90,7 @@ trait LowPriorityFileHandling extends Slurping with Timing {
     
     /** Returns the size of the file in bytes. */
     def size(implicit eh: ExceptionHandler): eh.![NotFoundExceptions, Long] =
-      eh.except(length(strategy.ThrowExceptions))
+      eh.except(length(strategy.throwExceptions))
     
     /** Creates a new instance of this type of URL. */
     def makePath(ascent: Int, elements: Seq[String], afterPath: AfterPath): FileUrl =
@@ -245,11 +245,11 @@ trait FileHandling extends LowPriorityFileHandling {
     
     /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
     def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
-      eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(strategy.ThrowExceptions))
+      eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(strategy.throwExceptions))
 
     /** Return an iterator of all descendants of this URL. */
     def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
-      eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.ThrowExceptions))
+      eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.throwExceptions))
   }
 
   /** Specifies how file: URLs should be navigable. */

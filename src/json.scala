@@ -75,7 +75,7 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
             })
             sb.append(textParts.next)
           }
-          Json.parse(sb.toString)(jp, strategy.ThrowExceptions)
+          Json.parse(sb.toString)(jp, strategy.throwExceptions)
         }
 
       /** Extracts values in the structure specified from parsed JSON.  Each element in the JSON
@@ -88,10 +88,10 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
           struct match {
             case d: Double =>
               if(json.extract(path).get[Double](JsonExtractor.doubleJsonExtractor,
-                  strategy.ThrowExceptions) != d) throw new Exception("Value doesn't match")
+                  strategy.throwExceptions) != d) throw new Exception("Value doesn't match")
             case s: String =>
               if(json.extract(path).get[String](JsonExtractor.stringJsonExtractor,
-                  strategy.ThrowExceptions) != s) throw new Exception("Value doesn't match")
+                  strategy.throwExceptions) != s) throw new Exception("Value doesn't match")
             case m: Map[_, _] => m foreach {
               case (k, v) =>
                 if(v == null) paths ::= (path / k.asInstanceOf[String])
@@ -209,7 +209,9 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
     
     implicit def optionJsonExtractor[T: JsonExtractor] =
       new JsonExtractor[Option[T]](x => if(x == null) None else Some(x.asInstanceOf[Any]).map(
-          implicitly[JsonExtractor[T]].cast))
+          implicitly[JsonExtractor[T]].cast)) {
+        override def errorToNull = true
+      }
     
     implicit def mapJsonExtractor[T: JsonExtractor] =
       new JsonExtractor[Map[String, T]](_.asInstanceOf[scala.collection.Map[String, Any]].
@@ -217,9 +219,11 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
   }
 
   @implicitNotFound("Cannot extract type ${T} from JSON.")
-  class JsonExtractor[T](val cast: Any => T)
-  implicit val nullExtractor: JsonExtractor[Json] = new JsonExtractor[Json](x => new Json(x))
-
+  class JsonExtractor[T](val cast: Any => T) {
+    def errorToNull = false
+  }
+  //implicit val nullExtractor: JsonExtractor[Json] = new JsonExtractor[Json](x => new Json(x))
+  
   class Json(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {
 
@@ -259,7 +263,8 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
 
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
-        eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(normalize) catch {
+        eh.![JsonGetException, T] = eh.except(try jsonExtractor.cast(if(jsonExtractor.errorToNull)
+            (try normalize catch { case e: Exception => null }) else normalize) catch {
           case e: MissingValueException => throw e
           case e: Exception => throw new TypeMismatchException()
         })
@@ -330,7 +335,9 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit jsonExtractor: JsonExtractor[T], eh: ExceptionHandler):
         eh.![JsonGetException, T] =
-          eh.except(try jsonExtractor.cast(normalize(false, false)) catch {
+          eh.except(try jsonExtractor.cast(if(jsonExtractor.errorToNull)
+              (try normalize(false, false) catch { case e: Exception => null }) else
+              normalize(false, false)) catch {
             case e: MissingValueException => throw e
             case e: Exception => throw new TypeMismatchException()
           })

@@ -50,6 +50,5 @@ trait Generating {
         n
       }
     }
-
   }
 }

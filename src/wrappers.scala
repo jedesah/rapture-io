@@ -58,7 +58,7 @@ trait LowPriorityJavaWrapping extends LowerPriorityJavaWrapping { this: Streamin
   implicit object HttpResponseByteReader extends StreamReader[HttpResponse, Byte] {
     def input(response: HttpResponse)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
       eh.except(response.input[Byte](implicitly[InputBuilder[InputStream, Byte]],
-          strategy.ThrowExceptions))
+          strategy.throwExceptions))
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding):

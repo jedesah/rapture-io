@@ -22,7 +22,7 @@ License.
 package tests.rapture.io
 
 import rapture.io._
-import strategy.ThrowExceptions
+import strategy.throwExceptions
 
 object Tests extends TestApp {
 
@@ -216,6 +216,11 @@ object Tests extends TestApp {
       val json""" { "obj": { "a": "C", "b": $x } } """ = Json.parse(src)
       x.get[String]
     }).throws[MatchError]
+
+    val extract9 = test({
+      val j = Json.parse("{}")
+      j.notThere.get[Option[String]]
+    }) yields None
 
     val jsonBuffer1 = test {
       val j = JsonBuffer.parse("{}")

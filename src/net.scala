@@ -133,7 +133,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
         ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] =
       Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = eh.except {
           post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(
-          implicitly[PostType[C]], strategy.ThrowExceptions)
+          implicitly[PostType[C]], strategy.throwExceptions)
         }
     
     /** Sends an HTTP post to this URL.
