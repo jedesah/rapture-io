@@ -69,10 +69,7 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
           val expressions = exprs.iterator
           sb.append(textParts.next())
           while(textParts.hasNext) {
-            sb.append(new Json(expressions.next).toString/*expressions.next match {
-              case s: String => "\""+s+"\""
-              case a => a.toString
-            }*/)
+            sb.append(new Json(expressions.next).toString)
             sb.append(textParts.next)
           }
           Json.parse(sb.toString)(jp, strategy.throwExceptions)
