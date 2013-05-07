@@ -141,7 +141,7 @@ trait Logging extends FileHandling with TcpHandling with Streaming {
         }).toMap
         log.listen(logger, level, zs)
         try { in.slurp()(implicitly[AccumulatorBuilder[String]], implicitly[ExceptionHandler],
-            inputStreamReader[String], implicitly[ClassTag[String]]) } catch {
+            inputStreamReader[String, Input], implicitly[ClassTag[String]]) } catch {
           case e: Exception => ()
         } finally log.unlisten(logger)
       }

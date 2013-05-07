@@ -26,7 +26,15 @@ import java.io._
 import java.net._
 import scala.reflect._
 
-trait Streaming extends JavaWrapping with Digesting with UrlHandling with Net {
+trait LowPriorityStreaming extends JavaWrapping with Digesting with UrlHandling with Net { this:
+    Streaming =>
+  implicit def stringByteReader(implicit encoding: Encoding) = new StreamReader[String, Byte] {
+    def input(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
+      eh.except(ByteArrayInput(s.getBytes(encoding.name)))
+  }
+}
+
+trait Streaming extends LowPriorityStreaming {
 
   /** Safely closes a stream after processing */
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit) = {
@@ -97,8 +105,8 @@ trait Streaming extends JavaWrapping with Digesting with UrlHandling with Net {
     }
   }
 
-  implicit def inputStreamReader[T] = new StreamReader[Input[T], T] {
-    def input(in: Input[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] =
+  implicit def inputStreamReader[T, I[T] <: Input[T]] = new StreamReader[I[T], T] {
+    def input(in: I[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] =
       eh.except(in) 
   }
 
@@ -214,6 +222,10 @@ trait Streaming extends JavaWrapping with Digesting with UrlHandling with Net {
         implicit val enc = Encodings.`UTF-8`
         response.input[Char]
       }
+  }
+
+  trait TypedInput { thisInput: Input[_] =>
+    def mimeType: MimeTypes.MimeType
   }
 
   /** An Input provides an incoming stream of data */

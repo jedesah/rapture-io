@@ -41,7 +41,7 @@ import java.net._
 class BaseIo extends FileHandling with Extracting with MimeHandling with JsonProcessing with
     Encrypting with Encodings with IpHandling with Logging with MimeTyping with Misc with Linking
     with ClasspathHandling with Shelling with TableFormatting with Finance with FtpHandling with
-    Emailing with Generating with Testing {
+    Emailing with Generating with Testing with Zipping {
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
