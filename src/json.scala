@@ -216,11 +216,11 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
   }
 
   @implicitNotFound("Cannot extract type ${T} from JSON.")
-  class Extractor[+T](val cast: Any => T) {
+  class Extractor[T](val cast: Any => T) {
     def errorToNull = false
   }
 
-  class JsonExtractor[+T](cast: Json => T) extends Extractor[T](x => cast(new Json(x)))
+  class JsonExtractor[T](cast: Json => T) extends Extractor[T](x => cast(new Json(x)))
 
   class Json(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {

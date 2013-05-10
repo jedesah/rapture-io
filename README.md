@@ -1,7 +1,7 @@
 Rapture I/O
 ===========
 
-Version 0.7.2 (beta) for Scala 2.10.0
+Version 0.8.0 (beta) for Scala 2.10.1
 
 Rapture is a general purpose I/O library for Scala.
 

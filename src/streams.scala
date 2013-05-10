@@ -26,6 +26,8 @@ import java.io._
 import java.net._
 import scala.reflect._
 
+import language.higherKinds
+
 trait LowPriorityStreaming extends JavaWrapping with Digesting with UrlHandling with Net { this:
     Streaming =>
   implicit def stringByteReader(implicit encoding: Encoding) = new StreamReader[String, Byte] {
@@ -240,6 +242,13 @@ trait Streaming extends LowPriorityStreaming {
     def apply(n: Int) = {
       for(i <- 0 until n) read()
       read().get
+    }
+
+    def typed(mime: MimeTypes.MimeType) = new Input[Data] with TypedInput {
+      def mimeType = mime
+      def ready() = thisInput.ready()
+      def close() = thisInput.close()
+      def read() = thisInput.read()
     }
 
     def iterator: Iterator[Data] = new Iterator[Data] {
