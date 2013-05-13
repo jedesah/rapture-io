@@ -65,25 +65,29 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
   }
 
   trait PostType[-C] {
-    def contentType: MimeTypes.MimeType
+    def contentType: Option[MimeTypes.MimeType]
     def sender(content: C): Input[Byte]
   }
 
   implicit val FormPostType = new PostType[Map[Symbol, String]] {
-    def contentType = MimeTypes.`application/x-www-form-urlencoded`
+    def contentType = Some(MimeTypes.`application/x-www-form-urlencoded`)
     def sender(content: Map[Symbol, String]) = ByteArrayInput((content map { case (k, v) =>
       URLEncoder.encode(k.name, "UTF-8")+"="+URLEncoder.encode(v, "UTF-8")
     } mkString "&").getBytes("UTF-8"))
   }
 
   implicit val StringPostType = new PostType[String] {
-    def contentType = MimeTypes.`text/plain`
+    def contentType = Some(MimeTypes.`text/plain`)
     def sender(content: String) = ByteArrayInput(content.getBytes("UTF-8"))
   }
 
+  implicit val NonePostType = new PostType[None.type] {
+    def contentType = Some(MimeTypes.`application/x-www-form-urlencoded`)
+    def sender(content: None.type) = ByteArrayInput(Array[Byte](0))
+  }
+
   implicit val JsonPostType = new PostType[Json] {
-    //def contentType = MimeTypes.`application/json`
-    def contentType = MimeTypes.`application/x-www-form-urlencoded`
+    def contentType = Some(MimeTypes.`application/x-www-form-urlencoded`)
     def sender(content: Json) =
       ByteArrayInput(content.toString.getBytes("UTF-8"))
   }
@@ -131,11 +135,16 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       * @return the HTTP response from the remote host */
     def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
         ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] =
-      Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] = eh.except {
-          post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(
-          implicitly[PostType[C]], strategy.throwExceptions)
-        }
-    
+        Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] =
+      post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(
+          implicitly[PostType[C]], eh)
+  
+    def get(authenticate: Option[(String, String)] = None, ignoreInvalidCertificates: Boolean =
+        false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler):
+        eh.![HttpExceptions, HttpResponse] = post(None, authenticate, ignoreInvalidCertificates,
+        httpHeaders, "GET")(implicitly[PostType[None.type]], eh)
+        
+
     /** Sends an HTTP post to this URL.
       *
       * @param content the content to post to the URL
@@ -167,7 +176,9 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
           Base64.encode((authenticate.get._1+":"+authenticate.get._2).getBytes("UTF-8"),
           endPadding = true).mkString)
 
-      conn.setRequestProperty("Content-Type", implicitly[PostType[C]].contentType.name)
+      implicitly[PostType[C]].contentType map { ct =>
+        conn.setRequestProperty("Content-Type", ct.name)
+      }
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
       ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
