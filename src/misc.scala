@@ -93,11 +93,7 @@ trait Misc {
 
   }
 
-  /** Y-combinator. Thanks Jorge Ortiz! */
-  case class B[F, T](c: B[F, T] => (F => T)) extends (B[F, T] => (F => T)) {
-    def apply(b: B[F, T]) = c(b)
-  }
-  def yCombinator[F, T] = (f: (F => T) => F => T) => B[F, T](x => f(x(x)(_)))(B(x => f(x(x)(_))))
+  def yCombinator[A, B](fn: (A => B) => (A => B)): A => B = fn(yCombinator(fn))(_)
 
   /** Times how long it takes to perform an operation, returning a pair of the result and the
     * duration of the operation in milliseconds. */

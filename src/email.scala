@@ -22,9 +22,9 @@ License.
 package rapture.implementation
 import rapture._
 
-//import javax.mail._
-//import javax.mail.internet._
-//import javax.activation._
+import javax.mail._
+import javax.mail.internet._
+import javax.activation._
 import scala.xml._
 
 trait Emailing extends Linking with MimeTyping {
@@ -70,7 +70,7 @@ trait Emailing extends Linking with MimeTyping {
     def schemeSpecificPart = s"//${hostname}"
     def absolute = true
 
-    /*def sendTo[Mail: Mailable](sender: EmailAddress, recipients: Seq[EmailAddress],
+    def sendTo[Mail: Mailable](sender: EmailAddress, recipients: Seq[EmailAddress],
         ccRecipients: Seq[EmailAddress] = Nil, subject: String, mail: Mail): Unit = {
       sendmail(sender.toString, recipients.map(_.toString), ccRecipients.map(_.toString), subject,
           implicitly[Mailable[Mail]].content(mail), None, Nil)
@@ -163,7 +163,7 @@ trait Emailing extends Linking with MimeTyping {
         }
       }
       Transport.send(msg)
-    }*/
+    }
   }
 }
 

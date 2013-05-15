@@ -122,7 +122,7 @@ trait MimeHandling extends Logging {
             val dataEnd = count - boundmatch - 1
             val size = dataEnd - dataStart
             
-            if(size > 0) {
+            if(size >= 0) {
               val res = new Array[Byte](size)
               var done = 0
               var i = 0
