@@ -93,7 +93,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
   }
 
   /** Common methods for `HttpUrl`s */
-  trait NetUrl[+U <: Url[U]] extends Uri { netUrl: U =>
+  trait NetUrl extends Url[NetUrl] with Uri {
     
     import javax.net.ssl._
     import javax.security.cert._
@@ -125,6 +125,8 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     def ssl: Boolean
     def canonicalPort: Int
 
+    private val base64 = new Base64Codec(endPadding = true)
+
     def schemeSpecificPart = "//"+hostname+(if(port == canonicalPort) "" else ":"+port)+pathString
 
     /** Sends an HTTP put to this URL.
@@ -135,14 +137,14 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       * @return the HTTP response from the remote host */
     def put[C: PostType](content: C, authenticate: Option[(String, String)] = None,
         ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] =
-        Map())(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] =
-      post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT")(
+        Map(), followRedirects: Boolean = true)(implicit eh: ExceptionHandler): eh.![HttpExceptions, HttpResponse] =
+      post(content, authenticate, ignoreInvalidCertificates, httpHeaders, "PUT", followRedirects)(
           implicitly[PostType[C]], eh)
   
     def get(authenticate: Option[(String, String)] = None, ignoreInvalidCertificates: Boolean =
-        false, httpHeaders: Map[String, String] = Map())(implicit eh: ExceptionHandler):
+        false, httpHeaders: Map[String, String] = Map(), followRedirects: Boolean = true)(implicit eh: ExceptionHandler):
         eh.![HttpExceptions, HttpResponse] = post(None, authenticate, ignoreInvalidCertificates,
-        httpHeaders, "GET")(implicitly[PostType[None.type]], eh)
+        httpHeaders, "GET", followRedirects)(implicitly[PostType[None.type]], eh)
         
 
     /** Sends an HTTP post to this URL.
@@ -153,7 +155,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       * @return the HTTP response from the remote host */
     def post[C: PostType](content: C, authenticate: Option[(String, String)] = None,
         ignoreInvalidCertificates: Boolean = false, httpHeaders: Map[String, String] = Map(),
-        method: String = "POST")(implicit eh: ExceptionHandler):
+        method: String = "POST", followRedirects: Boolean = true)(implicit eh: ExceptionHandler):
         eh.![HttpExceptions, HttpResponse] = eh.except {
 
       val conn: URLConnection = new URL(toString).openConnection()
@@ -163,18 +165,19 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
             c.setSSLSocketFactory(sslContext.getSocketFactory)
             c.setHostnameVerifier(allHostsValid)
           }
+          HttpURLConnection.setFollowRedirects(followRedirects)
           c.setRequestMethod(method)
           c.setDoOutput(true)
           c.setUseCaches(false)
         case c: HttpURLConnection =>
           c.setRequestMethod(method)
+          HttpURLConnection.setFollowRedirects(followRedirects)
           c.setDoOutput(true)
           c.setUseCaches(false)
       }
 
       if(authenticate.isDefined) conn.setRequestProperty("Authorization",
-          Base64.encode((authenticate.get._1+":"+authenticate.get._2).getBytes("UTF-8"),
-          endPadding = true).mkString)
+          base64.encode((authenticate.get._1+":"+authenticate.get._2).getBytes("UTF-8")).mkString)
 
       implicitly[PostType[C]].contentType map { ct =>
         conn.setRequestProperty("Content-Type", ct.name)
@@ -214,7 +217,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
 
   /** Represets a URL with the http scheme */
   class HttpUrl(val pathRoot: NetPathRoot[HttpUrl], elements: Seq[String], afterPath: AfterPath,
-      val ssl: Boolean) extends Url[HttpUrl](elements, afterPath) with NetUrl[HttpUrl] with
+      val ssl: Boolean) extends Url[HttpUrl](elements, afterPath) with NetUrl with
       PathUrl[HttpUrl] { thisHttpUrl =>
     
     def makePath(ascent: Int, xs: Seq[String], afterPath: AfterPath) =
@@ -225,7 +228,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     def canonicalPort = if(ssl) 443 else 80
   }
 
-  trait NetPathRoot[+T <: Url[T] with NetUrl[T]] extends PathRoot[T] {
+  trait NetPathRoot[+T <: Url[T] with NetUrl] extends PathRoot[T] {
     def hostname: String
     def port: Int
   }

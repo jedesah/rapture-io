@@ -47,48 +47,57 @@ trait Encrypting extends Digesting {
       
       val digest = Sha256.digest(clearText)
       val paddedLength = (clearText.length >> 4) + 1 << 4
-      val cipherText = new Array[Byte](paddedLength + 48)
+      val cipherText = new Array[Byte](paddedLength + (if(iv == null) 48 else 0))
       
-      Array.copy(cipher.getIV, 0, cipherText, 0, 16)
-      cipher.update(digest, 0, 32, cipherText, 16)
-      cipher.doFinal(clearText, 0, clearText.length, cipherText, 48)
+      if(iv == null) {
+        Array.copy(cipher.getIV, 0, cipherText, 0, 16)
+        cipher.update(digest, 0, 32, cipherText, 16)
+      }
+      cipher.doFinal(clearText, 0, clearText.length, cipherText, if(iv == null) 48 else 0)
       
       cipherText
     }
 
-    def decrypt(cipherText: Array[Byte], iv: Array[Byte] = null): Option[Array[Byte]] =
-      if(cipherText.length < 48) None
-      else {
+    def decrypt(cipherText: Array[Byte], iv: Array[Byte] = null)(implicit eh: ExceptionHandler):
+        eh.![DecryptionException, Array[Byte]] = eh.except {
+      if(iv == null && cipherText.length < 48) throw DecryptionException()
         
-        val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        val ips = if(iv == null) new IvParameterSpec(cipherText, 0, 16) else new IvParameterSpec(iv)
-        
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ips)
-        
-        val digest1 = cipher.update(cipherText, 16, 48)
-        val clearText = cipher.doFinal(cipherText, 64, cipherText.length - 64)
+      val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+      val ips = if(iv == null) new IvParameterSpec(cipherText, 0, 16) else new IvParameterSpec(iv)
+      
+      cipher.init(Cipher.DECRYPT_MODE, keySpec, ips)
+      
+      val n = if(iv == null) 64 else 0
+      
+      val digest1 = if(iv == null) cipher.update(cipherText, 16, 48) else Array[Byte]()
+      val clearText = cipher.doFinal(cipherText, n, cipherText.length - n)
+      
+      if(iv == null) {
         val digest2 = Sha256.digest(clearText)
-        
         var i = 0
         var r = true
+      
         
         while(i < 32) {
           if(digest1(i) != digest2(i)) r = false
           i += 1
         }
-        
-        Arrays.fill(digest1, 0.toByte)
-        Arrays.fill(digest2, 0.toByte)
-        
-        if(r) Some(clearText) else {
+
+        if(!r) {
+          Arrays.fill(digest1, 0.toByte)
+          Arrays.fill(digest2, 0.toByte)
           Arrays.fill(clearText, 0.toByte)
-          None
+          throw DecryptionException()
         }
       }
+      
+      clearText
+    }
 
     def apply(clearText: Array[Byte]): Array[Byte] = encrypt(clearText)
     
-    def unapply(cipherText: Array[Byte]): Option[Array[Byte]] = decrypt(cipherText)
+    def unapply(cipherText: Array[Byte]): Option[Array[Byte]] =
+      try Some(decrypt(cipherText)) catch { case DecryptionException() => None }
   }
 
   class Base64StringEncryption(sk: String) {
@@ -104,8 +113,9 @@ trait Encrypting extends Digesting {
     def encrypt(string: String): String =
       base64.encode(aesEnc.encrypt(string.getBytes("UTF-8"))).mkString
     
-    def decrypt(string: String): Option[String] =
-      aesEnc.decrypt(base64.decode(string)).map(s => new String(s, "UTF-8"))
+    def decrypt(string: String)(implicit eh: ExceptionHandler): eh.![DecryptionException, String] = eh.except {
+      new String(aesEnc.decrypt(base64.decode(string)), "UTF-8")
+    }
   }
 
   /** Shared implementation for AesInts and AesLongs. */
@@ -151,7 +161,7 @@ trait Encrypting extends Digesting {
 
       val out = cipher.doFinal(in)
       Arrays.fill(in, 0.toByte)
-      new String(base64.encode(out, false, false))
+      new String(base64.encode(out))
     }
 
     protected def decryptLong(cipherText: String): Option[Long] =

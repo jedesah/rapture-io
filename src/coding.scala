@@ -32,34 +32,34 @@ trait Codecs extends Encodings with ExceptionHandling {
   object Base64Url extends Base64Codec(char62 = '-', char63 = '_')
 
   /** RFC2045 base-64 codec, based on http://migbase64.sourceforge.net/. */
-  class Base64Codec(val char62: Char = '+', val char63: Char = '/', val padChar: Char = '=') {
+  class Base64Codec(val char62: Char = '+', val char63: Char = '/', val padChar: Char = '=',
+      val lineBreaks: Boolean = false, val endPadding: Boolean = false) {
     
-    private val Alphabet =
+    private val alphabet =
       ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"+char62+char63).toCharArray
     
-    private lazy val Decodabet = {
+    private lazy val decodabet = {
       val x = new Array[Int](256)
-      for(i <- 0 until Alphabet.length) x(Alphabet(i)) = i
+      for(i <- 0 until alphabet.length) x(alphabet(i)) = i
       x
     }
 
 
     /** Convenience method for encoding a string using the Base64 codec. */
     def encode(in: String)(implicit encoding: Encoding): String =
-      new String(encode(in.getBytes(encoding.name), false, false))
+      new String(encode(in.getBytes(encoding.name)))
 
     /** Non-RFC-compliant encoder. */
 
     /** Encoder. The RFC requires that line breaks be added every 76 chars, and
       * that the data be padded to a multiple of 4 chars, but we do these things
       * optionally. */
-    def encode(in: Array[Byte], lineBreaks: Boolean = false,
-        endPadding: Boolean = false): String = {
+    def encode(in: Array[Byte]): String = {
       
       var inLen = in.length
       
       if(inLen == 0) "" else {
-        val evenLen = (inLen / 3) * 3
+        val evenLen = (inLen/3)*3
         val outDataLen = if(endPadding) ((inLen - 1)/3 + 1) << 2 else ((inLen << 2) + 2 )/3
         val outLen = if(lineBreaks) outDataLen + (outDataLen - 1)/76 << 1 else outDataLen
         val out = new Array[Char](outLen)
@@ -74,10 +74,10 @@ trait Codecs extends Encodings with ExceptionHandling {
           
           inPos += 3
           
-          out(outPos) = Alphabet((block >>> 18) & 0x3F)
-          out(outPos + 1) = Alphabet((block >>> 12) & 0x3F)
-          out(outPos + 2) = Alphabet((block >>> 6) & 0x3F)
-          out(outPos + 3) = Alphabet(block & 0x3F)
+          out(outPos) = alphabet((block >>> 18) & 0x3F)
+          out(outPos + 1) = alphabet((block >>> 12) & 0x3F)
+          out(outPos + 2) = alphabet((block >>> 6) & 0x3F)
+          out(outPos + 3) = alphabet(block & 0x3F)
           
           outPos += 4
 
@@ -101,10 +101,10 @@ trait Codecs extends Encodings with ExceptionHandling {
           val block =
             ((in(evenLen) & 0xFF) << 10) | (if(left == 2) (in(inLen - 1) & 0xFF) << 2 else 0)
           
-          out(outPos) = Alphabet(block >>> 12)
-          out(outPos + 1) = Alphabet((block >>> 6) & 0x3F)
+          out(outPos) = alphabet(block >>> 12)
+          out(outPos + 1) = alphabet((block >>> 6) & 0x3F)
           
-          if(left == 2) out(outPos + 2) = Alphabet(block & 0x3F)
+          if(left == 2) out(outPos + 2) = alphabet(block & 0x3F)
           else if(endPadding) out(outPos + 2) = padChar
           
           if(endPadding) out(outPos + 3) = padChar
@@ -141,8 +141,8 @@ trait Codecs extends Encodings with ExceptionHandling {
           
           while(outPos < evenLen) {
             
-            val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
-                Decodabet(in(inPos + 2)) << 6 | Decodabet(in(inPos + 3))
+            val block = decodabet(in(inPos)) << 18 | decodabet(in(inPos + 1)) << 12 |
+                decodabet(in(inPos + 2)) << 6 | decodabet(in(inPos + 3))
             
             inPos += 4
 
@@ -163,8 +163,8 @@ trait Codecs extends Encodings with ExceptionHandling {
           }
 
           if(outPos < outLen) {
-            val block = Decodabet(in(inPos)) << 18 | Decodabet(in(inPos + 1)) << 12 |
-                (if(inPos + 2 < inLen - padding) Decodabet(in(inPos + 2)) << 6 else 0)
+            val block = decodabet(in(inPos)) << 18 | decodabet(in(inPos + 1)) << 12 |
+                (if(inPos + 2 < inLen - padding) decodabet(in(inPos + 2)) << 6 else 0)
 
             out(outPos) = (block >> 16).toByte
             

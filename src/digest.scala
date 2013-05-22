@@ -69,7 +69,7 @@ trait Digesting extends Codecs {
       * that this is not strictly RFC2045 compliant as the result is not padded.
       * Append "==" to comply. */
     def digestBase64(msg: Array[Byte]): String =
-      new String(Base64.encode(digest(msg), false, false))
+      new String(Base64.encode(digest(msg)))
   }
 
   object Sha1 extends Digester {
@@ -130,7 +130,7 @@ trait Digesting extends Codecs {
       Array.copy(salt, 0, code, 0, 8)
       Array.copy(digest, 0, code, 8, digest.length)
       
-      new String(Base64.encode(code, false, false))
+      new String(Base64.encode(code))
     }
   }
 
