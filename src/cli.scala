@@ -309,4 +309,43 @@ trait Shelling {
       }
     }
   }
+
+  // This is incomplete. Please ignore for now.
+  class InteractiveApp extends App {
+
+    def trapResize(width: Int, height: Int) = ()
+    def trapExit() = ()
+
+    var echo: Boolean = true
+
+    def next() = System.in.read.toChar
+
+    while(true) {
+      next() match {
+        case '[' => next() match {
+          case '[' => if(echo) print('[')
+          case 'C' => trapExit()
+          case 'R' =>
+            var w = 0
+            var h = 0
+            var n = next()
+            while(n != ',') {
+              w *= 10
+              w += n.toInt - 48
+              n = next()
+            }
+            n = next()
+            while(n != ']') {
+              h *= 10
+              h += n.toInt - 48
+              n = next()
+            }
+            trapResize(w, h)
+
+          case c => if(echo) print(c)
+        }
+        case c => if(echo) print(c)
+      }
+    }
+  }
 }

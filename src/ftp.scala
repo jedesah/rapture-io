@@ -46,7 +46,7 @@ trait FtpHandling extends UrlHandling with Net with Streaming {
   }
 
   class FtpUrl(val pathRoot: NetPathRoot[FtpUrl], val elems: Seq[String]) extends
-      Url[FtpUrl](elems, Map()) with NetUrl[FtpUrl] {
+      Url[FtpUrl](elems, Map()) with NetUrl {
     def makePath(ascent: Int, xs: Seq[String], afterPath: AfterPath) =
       new FtpUrl(pathRoot, elements)
   

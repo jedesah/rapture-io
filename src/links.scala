@@ -105,8 +105,12 @@ trait Linking extends Misc {
 
   /** Companion object for simple paths, including a method for creating a path from a `String` */
   object SimplePath {
-    def parse(path: String) = new SimplePath(path.replaceAll("^\\/", "").split("/") ++
-        (if(path.endsWith("/")) Array("") else Array[String]()), Map())
+    def parse(path: String): SimplePath =
+      if(path.startsWith("/")) parse(path.substring(1))
+      else new SimplePath(path.split("/") ++ {
+        if(path.endsWith("/")) Array("")
+        else Array[String]()
+      }, Map())
   }
 
   /** Defines a very simple absolute path with an unspecified base

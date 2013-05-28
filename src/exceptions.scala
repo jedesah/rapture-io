@@ -69,6 +69,7 @@ trait ExceptionHandling {
 
   sealed trait GeneralIoExceptions extends IoException
   sealed trait HttpExceptions extends IoException
+  sealed trait CryptoExceptions extends IoException
 
   case class InterruptedIo() extends GeneralIoExceptions
 
@@ -77,6 +78,9 @@ trait ExceptionHandling {
   case class NotFound() extends NotFoundExceptions with HttpExceptions
 
   case class Forbidden() extends HttpExceptions
+  case class TooManyRedirects() extends HttpExceptions
+  case class BadHttpResponse() extends HttpExceptions
+  case class DecryptionException() extends CryptoExceptions
 
   sealed trait JsonGetException extends RuntimeException
 

@@ -158,6 +158,9 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
         method: String = "POST", followRedirects: Boolean = true)(implicit eh: ExceptionHandler):
         eh.![HttpExceptions, HttpResponse] = eh.except {
 
+      // FIXME: This will produce a race condition if creating multiple URL connections with
+      // different values for followRedirects in parallel
+      HttpURLConnection.setFollowRedirects(followRedirects)
       val conn: URLConnection = new URL(toString).openConnection()
       conn match {
         case c: HttpsURLConnection =>
@@ -165,13 +168,11 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
             c.setSSLSocketFactory(sslContext.getSocketFactory)
             c.setHostnameVerifier(allHostsValid)
           }
-          HttpURLConnection.setFollowRedirects(followRedirects)
           c.setRequestMethod(method)
           c.setDoOutput(true)
           c.setUseCaches(false)
         case c: HttpURLConnection =>
           c.setRequestMethod(method)
-          HttpURLConnection.setFollowRedirects(followRedirects)
           c.setDoOutput(true)
           c.setUseCaches(false)
       }
@@ -265,16 +266,16 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     private val UrlRegex = """(https?):\/\/([\.\-a-z0-9]+)(:[1-9][0-9]*)?\/?(.*)""".r
 
     /** Parses a URL string into an HttpUrl */
-    def parse(s: String)(implicit eh: ExceptionHandler): eh.![Exception, HttpUrl] =
+    def parse(s: String)(implicit eh: ExceptionHandler): eh.![ParseException, HttpUrl] =
         eh.except { s match {
       case UrlRegex(scheme, server, port, path) =>
         val rp = new SimplePath(path.split("/"), Map())
         scheme match {
           case "http" => Http./(server, if(port == null) 80 else port.substring(1).toInt) / rp
           case "https" => Https./(server, if(port == null) 443 else port.substring(1).toInt) / rp
-          case _ => throw new Exception
+          case _ => throw ParseException(s)
         }
-      case _ => throw new Exception
+      case _ => throw ParseException(s)
     } }
   }
 
