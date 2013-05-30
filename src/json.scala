@@ -195,6 +195,8 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
     implicit val doubleExtractor = new Extractor[Double](_.asInstanceOf[Double])
     implicit val intExtractor = new Extractor[Int]({ x => try x.asInstanceOf[Int] catch {
         case e: ClassCastException => x.asInstanceOf[Double].toInt } })
+    implicit val byteExtractor = new Extractor[Byte]({ x => try x.asInstanceOf[Int].toByte catch {
+        case e: ClassCastException => x.asInstanceOf[Double].toByte } })
     implicit val longExtractor = new Extractor[Long](_.asInstanceOf[Double].toLong)
     implicit val booleanExtractor = new Extractor[Boolean](_.asInstanceOf[Boolean])
     implicit val anyExtractor = new Extractor[Any](identity)
