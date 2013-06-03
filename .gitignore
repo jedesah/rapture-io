@@ -1,0 +1,12 @@
+#vi
+*~
+*.sw?
+
+#scala
+target
+.cache
+
+#eclipse
+.settings
+.project
+.classpath
