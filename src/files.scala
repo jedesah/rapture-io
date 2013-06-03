@@ -238,7 +238,7 @@ trait FileHandling extends LowPriorityFileHandling {
       }
   }
 
-  implicit def navigableExtras[UrlType: Navigable](url: UrlType) = new {
+  implicit class NavigableExtras[UrlType: Navigable](url: UrlType) {
     
     /** Return a list of children of this URL */
     def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
@@ -250,6 +250,13 @@ trait FileHandling extends LowPriorityFileHandling {
     /** Return an iterator of all descendants of this URL. */
     def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
       eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.throwExceptions))
+  
+    def walkFilter(cond: UrlType => Boolean)(implicit eh: ExceptionHandler):
+        eh.![Exception, Iterator[UrlType]] = eh.except {
+      children(strategy.throwExceptions).iterator filter cond flatMap { f =>
+        new NavigableExtras(f).walkFilter(cond)
+      }
+    }
   }
 
   /** Specifies how file: URLs should be navigable. */
