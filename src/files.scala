@@ -252,8 +252,8 @@ trait FileHandling extends LowPriorityFileHandling {
       eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.throwExceptions))
   
     def walkFilter(cond: UrlType => Boolean)(implicit eh: ExceptionHandler):
-        eh.![Exception, Iterator[UrlType]] = eh.except {
-      children(strategy.throwExceptions).iterator filter cond flatMap { f =>
+        eh.![Exception, List[UrlType]] = eh.except {
+      children(strategy.throwExceptions) filter cond flatMap { f =>
         new NavigableExtras(f).walkFilter(cond)
       }
     }
