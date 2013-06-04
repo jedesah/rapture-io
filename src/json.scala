@@ -148,8 +148,8 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
           List("[", a map { v => indent+" "+format(Some(v), ln + 1) } mkString(",\n"),
               indent+"]") mkString "\n"
         case Some(s: String) =>
-          "\""+s.replaceAll("\\\\", "\\\\\\\\").replaceAll("\n", "\\\\n").replaceAll("\"",
-              "\\\\\"")+"\""
+          "\""+s.replaceAll("\\\\", "\\\\\\\\").replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n").
+              replaceAll("\"", "\\\\\"")+"\""
         case Some(n: Int) => n.toString
         case Some(n: Number) => n.toString
         case Some(v: Boolean) => if(v) "true" else "false"
