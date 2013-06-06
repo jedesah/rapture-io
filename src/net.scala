@@ -197,7 +197,10 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       }
       
       val is = try conn.getInputStream() catch {
-        case e: IOException => new ByteArrayInputStream("".getBytes())
+        case e: IOException => conn match {
+          case c: HttpsURLConnection => c.getErrorStream()
+          case c: HttpURLConnection => c.getErrorStream()
+        }
       }
       new HttpResponse(mapAsScalaMap(conn.getHeaderFields()).toMap.mapValues(_.to[List]),
           statusCode, is)
