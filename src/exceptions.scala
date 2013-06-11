@@ -25,6 +25,7 @@ import rapture._
 import language.higherKinds
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 import scala.concurrent._
 
@@ -52,6 +53,14 @@ trait ExceptionHandling {
           case e: E => Left(e)
           case e: Throwable => throw e
         }
+      
+    }
+
+    implicit def returnTry = new ThrowExceptions
+    
+    class ReturnTry extends ExceptionHandler {
+      type ![E <: Exception, T] = Try[T]
+      def except[E <: Exception, T](t: => T)(implicit mf: ClassTag[E]): Try[T] = Try(t)
       
     }
 
