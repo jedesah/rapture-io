@@ -178,7 +178,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       }
 
       if(authenticate.isDefined) conn.setRequestProperty("Authorization",
-          base64.encode((authenticate.get._1+":"+authenticate.get._2).getBytes("UTF-8")).mkString)
+          "Basic "+base64.encode((authenticate.get._1+":"+authenticate.get._2).getBytes("UTF-8")).mkString)
 
       implicitly[PostType[C]].contentType map { ct =>
         conn.setRequestProperty("Content-Type", ct.name)
