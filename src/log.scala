@@ -22,6 +22,7 @@ License.
 package rapture.implementation
 import rapture._
 
+import scala.annotation.elidable
 import scala.reflect._
 
 // Rewrite using actors
@@ -70,25 +71,37 @@ trait Logging extends FileHandling with TcpHandling with Streaming {
       listeners = listeners.filter(_._1 != logger)
     }
 
-    @inline def trace(msg: => String)(implicit zone: Zone) =
+    @inline
+    @elidable(1)
+    def trace(msg: => String)(implicit zone: Zone) =
       log(Trace, zone, msg)
     
-    @inline def debug(msg: => String)(implicit zone: Zone) =
+    @inline
+    @elidable(2)
+    def debug(msg: => String)(implicit zone: Zone) =
       log(Debug, zone, msg)
     
-    @inline def info(msg: => String)(implicit zone: Zone) =
+    @inline
+    @elidable(3)
+    def info(msg: => String)(implicit zone: Zone) =
       log(Info, zone, msg)
     
-    @inline def warn(msg: => String)(implicit zone: Zone) =
+    @inline
+    @elidable(4)
+    def warn(msg: => String)(implicit zone: Zone) =
       log(Warn, zone, msg)
     
-    @inline def error(msg: => String)(implicit zone: Zone) =
+    @inline
+    @elidable(5)
+    def error(msg: => String)(implicit zone: Zone) =
       log(Error, zone, msg)
     
-    @inline def fatal(msg: => String)(implicit zone: Zone) =
+    @inline
+    def fatal(msg: => String)(implicit zone: Zone) =
       log(Fatal, zone, msg)
     
-    @inline def exception(e: => Throwable)(implicit zone: Zone) = {
+    @inline
+    def exception(e: => Throwable)(implicit zone: Zone) = {
       log(Error, zone, e.toString)
       log(Debug, zone, "    "+e.getStackTrace.mkString("\n    "))
     }
