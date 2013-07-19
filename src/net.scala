@@ -208,12 +208,16 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     }
   }
 
-  implicit object HttpQueryParameters extends QueryType[Path[_], Map[Symbol, String]] {
-    def extras(existing: AfterPath, q: Map[Symbol, String]): AfterPath =
-      existing + ('?' -> ((q.map({ case (k, v) =>
+  class HttpQueryParametersBase[U, T <: Iterable[U]] extends QueryType[Path[_], T] {
+    def extras(existing: AfterPath, q: T): AfterPath =
+      existing + ('?' -> ((q.map({ case (k: Symbol, v: String) =>
         UrlCodec(k.name).urlEncode+"="+UrlCodec(v).urlEncode
       }).mkString("&")) -> 1.0))
   }
+
+  implicit object HttpQueryParametersMap extends HttpQueryParametersBase[(Symbol, String), Map[Symbol, String]]
+
+  implicit object HttpQueryParametersIter extends HttpQueryParametersBase[(Symbol, String), Seq[(Symbol, String)]]
 
   implicit object PageIdentifier extends QueryType[Path[_], Symbol] {
     def extras(existing: AfterPath, q: Symbol): AfterPath =
