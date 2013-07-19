@@ -169,11 +169,11 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
             c.setHostnameVerifier(allHostsValid)
           }
           c.setRequestMethod(method)
-          c.setDoOutput(true)
+          if(content != None) c.setDoOutput(true)
           c.setUseCaches(false)
         case c: HttpURLConnection =>
           c.setRequestMethod(method)
-          c.setDoOutput(true)
+          if(content != None) c.setDoOutput(true)
           c.setUseCaches(false)
       }
 
@@ -185,9 +185,10 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       }
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
-      ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
-        implicitly[PostType[C]].sender(content) > out
-      } (_.close())
+      if(content != None)
+        ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
+          implicitly[PostType[C]].sender(content) > out
+        } (_.close())
 
       import scala.collection.JavaConversions._
 
