@@ -169,11 +169,11 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
             c.setHostnameVerifier(allHostsValid)
           }
           c.setRequestMethod(method)
-          c.setDoOutput(true)
+          if(content != None) c.setDoOutput(true)
           c.setUseCaches(false)
         case c: HttpURLConnection =>
           c.setRequestMethod(method)
-          c.setDoOutput(true)
+          if(content != None) c.setDoOutput(true)
           c.setUseCaches(false)
       }
 
@@ -185,9 +185,10 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
       }
       for((k, v) <- httpHeaders) conn.setRequestProperty(k, v)
 
-      ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
-        implicitly[PostType[C]].sender(content) > out
-      } (_.close())
+      if(content != None)
+        ensuring(OutputStreamBuilder.output(conn.getOutputStream)) { out =>
+          implicitly[PostType[C]].sender(content) > out
+        } (_.close())
 
       import scala.collection.JavaConversions._
 
@@ -207,12 +208,16 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     }
   }
 
-  implicit object HttpQueryParameters extends QueryType[Path[_], Map[Symbol, String]] {
-    def extras(existing: AfterPath, q: Map[Symbol, String]): AfterPath =
-      existing + ('?' -> ((q.map({ case (k, v) =>
+  class HttpQueryParametersBase[U, T <: Iterable[U]] extends QueryType[Path[_], T] {
+    def extras(existing: AfterPath, q: T): AfterPath =
+      existing + ('?' -> ((q.map({ case (k: Symbol, v: String) =>
         UrlCodec(k.name).urlEncode+"="+UrlCodec(v).urlEncode
       }).mkString("&")) -> 1.0))
   }
+
+  implicit object HttpQueryParametersMap extends HttpQueryParametersBase[(Symbol, String), Map[Symbol, String]]
+
+  implicit object HttpQueryParametersIter extends HttpQueryParametersBase[(Symbol, String), Seq[(Symbol, String)]]
 
   implicit object PageIdentifier extends QueryType[Path[_], Symbol] {
     def extras(existing: AfterPath, q: Symbol): AfterPath =
