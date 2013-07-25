@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=master)](https://travis-ci.org/propensive/rapture-io)
 Rapture I/O
 ===========
 
