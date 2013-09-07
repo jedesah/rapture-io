@@ -13,7 +13,7 @@
 		<name>com.propensive</name>
 	</organization>
 	<properties>
-		<scala.version>2.10.1</scala.version>
+		<scala.version>2.10.2</scala.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
@@ -22,18 +22,6 @@
 			<artifactId>scala-library</artifactId>
 			<version>${scala.version}</version>
 			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-			<version>1.4.4</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.scalatest</groupId>
-			<artifactId>scalatest_2.10</artifactId>
-			<version>1.9.1</version>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	<build>

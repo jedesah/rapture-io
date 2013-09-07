@@ -1,55 +1,49 @@
 [![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=master)](https://travis-ci.org/propensive/rapture-io)
 Rapture I/O
-===========
+-----------
 
 Version 0.8.1 (beta) for Scala 2.10.2
 
-Rapture is a general purpose I/O library for Scala.
+**Rapture I/O** is a general purpose I/O library for Scala, providing much of the functionality of `java.io` and `java.net`, plus comprehensive support for working with JSON.
 
-Compilation
------------
+See [rapture.io](http://rapture.io/) for more information, examples and documentation.
 
-You can now use Maven to compile the project :
+### Building Rapture I/O
 
-mvn clean scala:compile
-
-to get the jar file :
-
-mvn clean scala:compile package
-
-Rapture I/O can be compiled the "low-tech" way using a few familiar commands, or
-you can use the "high-tech" rapture-build Makefile, which can simplify the
-compilation and development process.
-
-Whilst the first option requires more steps to complete, developers should
-already be very familiar with the commands used in each step.  The second option
-should be less effort, though the automation comes at the expense of
-transparency.
-
-
-Simple Compilation
---------------------
+Rapture I/O has no dependencies (apart from Scala), and you can build it from source with just a few simple commands.
 
 Using Scala 2.10.2 (or later), compile Rapture I/O as follows:
 
-        mkdir rapture
-        cd rapture
-        git clone https://github.com/propensive/rapture-io.git io
-        cd io
+        git clone https://github.com/propensive/rapture-io.git
+        cd rapture-io
         scalac -d bin src/*.scala
         jar cf io.jar -C bin rapture
 
-To use Rapture I/O in your own projects, just include io.jar on your classpath and
-import rapture.io._.
+Just include `io.jar` on your classpath to use Rapture I/O.
 
-For most functionality, you will also need to specify a strategy for handling exceptions. Import one of the following return type strategies:
+### Building Rapture I/O using Maven
 
-        import strategy.throwExceptions
-        import strategy.captureExceptions
-        import strategy.returnTry
-        import strategy.returnFutures
+Thanks to Michel Daviot, you can also use Maven to compile the project using:
 
-Now, you're ready to go!
+        git clone https://github.com/propensive/rapture-io.git
+        cd rapture-io
+        mvn clean scala:compile package
+
+To use Rapture I/O in your own projects, just include io.jar on your classpath and`import rapture.io._`.
+
+For most functionality, you will also need to specify a strategy for handling exceptions. Import one of the following return-type strategies:
+
+* `strategy.throwExceptions`
+* `strategy.captureExceptions`
+* `strategy.returnTry`
+* `strategy.returnFutures`
+
+Now, you're ready to go! Try this:
+
+        $ scala -cp io.jar
+        Welcome to Scala version 2.10.2 (Java HotSpot(TM) 64-Bit Server VM, Java 1.6.0_24).
+        Type in expressions to have them evaluated.
+        Type :help for more information.
 
         scala> import rapture.io._
         import rapture.io._
