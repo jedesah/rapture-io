@@ -39,8 +39,8 @@ Using Scala 2.10.2 (or later), compile Rapture I/O as follows:
         scalac -d bin src/*.scala
         jar cf io.jar -C bin rapture
 
-To use Rapture I/O in your own projects, just include io.jar on your classpath, import
-rapture.io._.
+To use Rapture I/O in your own projects, just include io.jar on your classpath and
+import rapture.io._.
 
 For most functionality, you will also need to specify a strategy for handling exceptions. Import one of the following return type strategies:
 
@@ -50,3 +50,17 @@ For most functionality, you will also need to specify a strategy for handling ex
         import strategy.returnFutures
 
 Now, you're ready to go!
+
+        scala> import rapture.io._
+        import rapture.io._
+
+        scala> import strategy.throwExceptions
+        throwExceptions
+
+        scala> json"""{ "foo": "Hello world!" }"""
+        res0: rapture.io.Json = 
+        {
+         "foo": "Hello world!"
+        }
+
+
