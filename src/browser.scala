@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.8.0
+Version 0.8.1
 
 The primary distribution site is
 
@@ -33,7 +33,7 @@ trait Browsing extends Streaming with Timing {
   }
   
   class Browser {
-    val browserString = "Rapture I/O Browser 0.8.0"
+    val browserString = "Rapture I/O Browser 0.8.1"
 
     val cookies: HashMap[(String, String, SimplePath), Cookie] =
       new HashMap[(String, String, SimplePath), Cookie]

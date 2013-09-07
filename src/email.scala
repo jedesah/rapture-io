@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Rapture I/O Library
-Version 0.8.0
+Version 0.8.1
 
 The primary distribution site is
 
@@ -22,9 +22,6 @@ License.
 package rapture.implementation
 import rapture._
 
-import javax.mail._
-import javax.mail.internet._
-import javax.activation._
 import scala.xml._
 
 trait Emailing extends Linking with MimeTyping {
@@ -82,10 +79,20 @@ trait Emailing extends Linking with MimeTyping {
           am.ccRecipients(mail).map(_.toString), am.subject(mail), am.content(mail), None, Nil)
     }
 
+    // This currently has a dependency on javax.mail. Uncommend the body below if you wish to use
+    // it.
     def sendmail(from: String, to: Seq[String], cc: Seq[String], subject: String,
+        bodyText: String, bodyHtml: Option[(String, Seq[(String, String)])],
+        attachments: Seq[(String, String, String)]): Unit = ???
+    
+    /*def sendmail(from: String, to: Seq[String], cc: Seq[String], subject: String,
         bodyText: String, bodyHtml: Option[(String, Seq[(String, String)])],
         attachments: Seq[(String, String, String)]): Unit = {
     
+      import javax.mail._
+      import javax.mail.internet._
+      import javax.activation._
+      
       val props = System.getProperties()
       props.put("mail.smtp.host", hostname)
       val session = Session.getDefaultInstance(props, null)
@@ -163,7 +170,7 @@ trait Emailing extends Linking with MimeTyping {
         }
       }
       Transport.send(msg)
-    }
+    }*/
   }
 }
 

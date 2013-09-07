@@ -7,7 +7,7 @@
 	<artifactId>rapture-io_2.10</artifactId>
 	<packaging>jar</packaging>
 	<description>rapture-io</description>
-	<version>0.8.0</version>
+	<version>0.8.1</version>
 	<name>rapture-io</name>
 	<organization>
 		<name>com.propensive</name>
