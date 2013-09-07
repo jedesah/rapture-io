@@ -101,7 +101,12 @@ trait Misc {
     val t = System.currentTimeMillis
     blk -> (System.currentTimeMillis - t)
   }
-  
+ 
+  def yielding[T](result: T)(fn: => Unit) = {
+    fn
+    result
+  }
+
   @inline implicit class NullableExtras[T](t: T) {
     def fromNull = if(t == null) None else Some(t)
   }

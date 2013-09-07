@@ -114,8 +114,9 @@ trait Logging extends FileHandling with TcpHandling with Streaming {
         dateCreated = time
       }
       val m = if(msg == null) "null" else msg
+      val z = if(zone == null) "null" else zone.name
       val ln = m.replaceAll("\n", "\n                                       ")
-      val formattedMsg = "%1$-23s %2$-5s %3$-8s %4$s".format(dateString, level.name, zone.name, ln)
+      val formattedMsg = "%1$-23s %2$-5s %3$-8s %4$s".format(dateString, level.name, z, ln)
       
       for((lgr, lvl, spec) <- listeners if spec.getOrElse(zone, lvl).level >= level.level) {
         try lgr.log(formattedMsg, level, zone) catch {

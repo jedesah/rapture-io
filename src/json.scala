@@ -23,10 +23,15 @@ package rapture.implementation
 import rapture._
 
 import language.dynamics
+import language.experimental.macros
 import scala.collection.mutable.{ListBuffer, HashMap}
 
+trait MacroImplicits {
+  implicit def summon[T <: Product]: Extractor[T] = macro rapture.experimental.caseClassExtractors.summonImpl[T]
+}
+
 /** Some useful JSON shortcuts */
-trait JsonProcessing extends ExceptionHandling with Linking with Misc {
+trait JsonProcessing extends ExceptionHandling with Linking with Misc with MacroImplicits {
 
   case class ParseException(source: String, line: Option[Int] = None, column: Option[Int] = None)
       extends Exception {
@@ -84,10 +89,10 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
         def extract(struct: Any, path: SimplePath): Unit =
           struct match {
             case d: Double =>
-              if(json.extract(path).get[Double](Extractor.doubleExtractor,
+              if(json.extract(path).get[Double](doubleExtractor,
                   strategy.throwExceptions) != d) throw new Exception("Value doesn't match")
             case s: String =>
-              if(json.extract(path).get[String](Extractor.stringExtractor,
+              if(json.extract(path).get[String](stringExtractor,
                   strategy.throwExceptions) != s) throw new Exception("Value doesn't match")
             case m: Map[_, _] => m foreach {
               case (k, v) =>
@@ -187,42 +192,38 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
 
   /** Companion object for Extractor type. Defines very simple extractor methods for different
     * types which may be contained within. */
-  object Extractor {
-    
-    implicit val noopExtractor = new Extractor[Json](x => new Json(x))
-    implicit val noopExtractor2 = new Extractor[JsonBuffer](x => new JsonBuffer(x))
-    implicit val stringExtractor = new Extractor[String](_.asInstanceOf[String])
-    implicit val doubleExtractor = new Extractor[Double](_.asInstanceOf[Double])
-    implicit val intExtractor = new Extractor[Int]({ x => try x.asInstanceOf[Int] catch {
-        case e: ClassCastException => x.asInstanceOf[Double].toInt } })
-    implicit val byteExtractor = new Extractor[Byte]({ x => try x.asInstanceOf[Int].toByte catch {
-        case e: ClassCastException => x.asInstanceOf[Double].toByte } })
-    implicit val longExtractor = new Extractor[Long](_.asInstanceOf[Double].toLong)
-    implicit val booleanExtractor = new Extractor[Boolean](_.asInstanceOf[Boolean])
-    implicit val anyExtractor = new Extractor[Any](identity)
-    
-    implicit def listExtractor[T: Extractor] =
-      new Extractor[List[T]](_.asInstanceOf[Seq[Any]].to[List] map { x =>
-        implicitly[Extractor[T]].cast(x)
-      })
-    
-    implicit def optionExtractor[T: Extractor] =
-      new Extractor[Option[T]](x => if(x == null) None else Some(x.asInstanceOf[Any]).map(
-          implicitly[Extractor[T]].cast)) {
-        override def errorToNull = true
-      }
-    
-    implicit def mapExtractor[T: Extractor] =
-      new Extractor[Map[String, T]](_.asInstanceOf[scala.collection.Map[String, Any]].
-          toMap.mapValues(implicitly[Extractor[T]].cast))
+  implicit val noopExtractor = BasicExtractor[Json](x => new Json(x))
+  implicit val noopExtractor2 = BasicExtractor[JsonBuffer](x => new JsonBuffer(x))
+  implicit val stringExtractor = BasicExtractor[String](_.asInstanceOf[String])
+  implicit val doubleExtractor = BasicExtractor[Double](_.asInstanceOf[Double])
+  implicit val intExtractor = BasicExtractor[Int]({ x => try x.asInstanceOf[Int] catch {
+      case e: ClassCastException => x.asInstanceOf[Double].toInt } })
+  implicit val byteExtractor = BasicExtractor[Byte]({ x => try x.asInstanceOf[Int].toByte catch {
+      case e: ClassCastException => x.asInstanceOf[Double].toByte } })
+  implicit val longExtractor = BasicExtractor[Long](_.asInstanceOf[Double].toLong)
+  implicit val booleanExtractor = BasicExtractor[Boolean](_.asInstanceOf[Boolean])
+  implicit val anyExtractor = BasicExtractor[Any](identity)
+  
+  implicit def listExtractor[T: Extractor]: Extractor[List[T]] =
+    BasicExtractor[List[T]](_.asInstanceOf[Seq[Any]].to[List] map { x =>
+      implicitly[Extractor[T]].construct(x)
+    })
+  
+  implicit def optionExtractor[T: Extractor]: Extractor[Option[T]] =
+    new BasicExtractor[Option[T]](x => if(x == null) None else Some(x.asInstanceOf[Any]).map(
+        implicitly[Extractor[T]].construct)) {
+      override def errorToNull = true
+    }
+  
+  implicit def mapExtractor[T: Extractor]: Extractor[Map[String, T]] =
+    BasicExtractor[Map[String, T]](_.asInstanceOf[scala.collection.Map[String, Any]].
+        toMap.mapValues(implicitly[Extractor[T]].construct))
+
+  case class BasicExtractor[T](val cast: Any => T) extends Extractor[T] {
+    def construct(any: Any) = cast(any)
   }
 
-  @implicitNotFound("Cannot extract type ${T} from JSON.")
-  class Extractor[T](val cast: Any => T) {
-    def errorToNull = false
-  }
-
-  class JsonExtractor[T](cast: Json => T) extends Extractor[T](x => cast(new Json(x)))
+  class JsonExtractor[T](cast: Json => T) extends BasicExtractor[T](x => cast(new Json(x)))
 
   class Json(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {
@@ -263,7 +264,7 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
 
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit extractor: Extractor[T], eh: ExceptionHandler):
-        eh.![JsonGetException, T] = eh.except(try extractor.cast(if(extractor.errorToNull)
+        eh.![JsonGetException, T] = eh.except(try extractor.construct(if(extractor.errorToNull)
             (try normalize catch { case e: Exception => null }) else normalize) catch {
           case e: MissingValueException => throw e
           case e: Exception => throw new TypeMismatchException()
@@ -335,7 +336,7 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
     /** Assumes the Json object is wrapping a `T`, and casts (intelligently) to that type. */
     def get[T](implicit extractor: Extractor[T], eh: ExceptionHandler):
         eh.![JsonGetException, T] =
-          eh.except(try extractor.cast(if(extractor.errorToNull)
+          eh.except(try extractor.construct(if(extractor.errorToNull)
               (try normalize(false, false) catch { case e: Exception => null }) else
               normalize(false, false)) catch {
             case e: MissingValueException => throw e
@@ -352,3 +353,12 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc {
       }
   }
 }
+
+
+@implicitNotFound("Cannot extract type ${T} from JSON.")
+trait Extractor[T] {
+  def construct(any: Any): T
+  def errorToNull = false
+}
+
+
