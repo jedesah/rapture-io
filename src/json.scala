@@ -27,7 +27,7 @@ import language.experimental.macros
 import scala.collection.mutable.{ListBuffer, HashMap}
 
 trait MacroImplicits {
-  implicit def summon[T <: Product]: Extractor[T] = macro rapture.experimental.caseClassExtractors.summonImpl[T]
+  implicit def materialize[T <: Product]: Extractor[T] = macro CaseClassExtraction.materialize[T]
 }
 
 /** Some useful JSON shortcuts */
