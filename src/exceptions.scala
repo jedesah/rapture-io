@@ -56,7 +56,7 @@ trait ExceptionHandling {
       
     }
 
-    implicit def returnTry = new ThrowExceptions
+    implicit def returnTry = new ReturnTry
     
     class ReturnTry extends ExceptionHandler {
       type ![E <: Exception, T] = Try[T]
