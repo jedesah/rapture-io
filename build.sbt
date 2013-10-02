@@ -1,7 +1,5 @@
 name := "rapture-io"
 
-version := "0.8.1"
-
 description := "Rapture I/O is a general purpose I/O library for Scala, providing much of the functionality of java.io and java.net, plus comprehensive support for working with JSON."
 
 scalaVersion := "2.10.2"
@@ -25,10 +23,16 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2" % "2.2.2" % "test" //"org.scalatest" % "scalatest_2.10" % "2.0.RC1" % "test"
 )
 
+initialCommands in console := """
+  import rapture.io._
+  implicit val zone = Zone("console")
+"""
 
-seq(flatDirectoriesSettings:_*)
+flatDirectoriesSettings
 
-seq(bintrayPublishSettings:_*)
+releaseSettings
+
+bintrayPublishSettings
 
 bintray.Keys.packageLabels in bintray.Keys.bintray := Seq("scala", "io", "http", "url", "json")
 
@@ -38,7 +42,3 @@ val javaRuntimeJar = file("/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Con
 
 apiMappings += (javaRuntimeJar -> url(s"http://www.scala-lang.org/api/${scalaVersion.value}/"))
 
-initialCommands in console := """
-  import rapture.io._
-  implicit val zone = Zone("console")
-"""
