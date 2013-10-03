@@ -1,3 +1,5 @@
+organization := "rapture-io"
+
 name := "rapture-io"
 
 description := "Rapture I/O is a general purpose I/O library for Scala, providing much of the functionality of java.io and java.net, plus comprehensive support for working with JSON."
@@ -7,6 +9,8 @@ scalaVersion := "2.10.2"
 licenses += ( "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt") )
 
 homepage := Some(url("http://rapture.io"))
+
+val searchTags =  Seq("scala", "io", "http", "url", "json")
 
 scalacOptions ++= List(
   "-encoding", "utf8",
@@ -28,13 +32,13 @@ initialCommands in console := """
   implicit val zone = Zone("console")
 """
 
-flatDirectoriesSettings
+seq(flatDirectoriesSettings: _*)
 
-releaseSettings
+seq(releaseSettings: _*)
 
-bintrayPublishSettings
+seq(bintrayPublishSettings: _*)
 
-bintray.Keys.packageLabels in bintray.Keys.bintray := Seq("scala", "io", "http", "url", "json")
+bintray.Keys.packageLabels in bintray.Keys.bintray := searchTags
 
 val javaHome = "/Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home" /*System.getProperty("JAVA_HOME")*/
 
