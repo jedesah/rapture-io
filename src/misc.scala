@@ -84,7 +84,7 @@ trait Misc {
   case class Csv(data: Array[Array[String]]) {
     override def toString = {
       val sb = new StringBuilder
-      for(xs <- data) sb.append(xs.map(_.replaceAll("\"", "\\\"")).mkString("\"", "\",\"", "\"\n"))
+      for(xs <- data) sb.append(xs.map(_.replaceAll("\\\"", "\\\\\"")).mkString("\"", "\",\"", "\"\n"))
       sb.toString
     }
 
