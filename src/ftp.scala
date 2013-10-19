@@ -26,7 +26,6 @@ trait FtpHandling extends UrlHandling with Net with Streaming {
 
   object Ftp extends Scheme[FtpUrl] {
     def schemeName = "ftp"
-
     def /(hostname: String, username: String = null, password: String = null, port: Int = 25) = {
       new FtpPathRoot(hostname, username.fromNull, password.fromNull, port)
     }

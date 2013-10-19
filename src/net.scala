@@ -263,7 +263,7 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
   /** Factory for creating new HTTP URLs */
   object Http extends Scheme[HttpUrl] {
     def schemeName = "http"
-    
+
     /** Creates a new URL with the http scheme with the specified domain name and port
       *
       * @param hostname A `String` of the domain name for the URL

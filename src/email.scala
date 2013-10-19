@@ -43,8 +43,8 @@ trait Emailing extends Linking with MimeTyping {
   }
 
   object Smtp extends Scheme[Smtp] {
-    def /(hostname: String) = new Smtp(hostname)
     def schemeName = "smtp"
+    def /(hostname: String) = new Smtp(hostname)
   }
 
   trait Mailable[T] { def content(t: T): String }

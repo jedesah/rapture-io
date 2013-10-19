@@ -44,8 +44,8 @@ trait Zipping extends Streaming {
     }
   }
 
-  /** GZips an input stream. Note that the current implementation blocks until the input has been
-    * read. Future implementations will return after the first read. */
+  /** GZips an input stream. Note that the current implementation blocks until the input has
+    * been read. Future implementations will return after the first read. */
   def gzip(in: Input[Byte]): Input[Byte] with TypedInput = {
     val baos = new ByteArrayOutputStream()
     val gzos = new GZIPOutputStream(baos)
