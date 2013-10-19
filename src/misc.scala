@@ -66,10 +66,7 @@ trait Misc {
     def update(t: T): Unit
   }
 
-  class Counter {
-    private var n = 0
-    def apply() = synchronized { n += 1; n }
-  }
+  class Counter(private var n: Int = 0) { def apply() = synchronized { val r = n; n += 1; r } }
 
   def repeat[T](blk: => T) = new { def until(test: T => Boolean) = {
     var t: T = blk

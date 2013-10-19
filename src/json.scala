@@ -80,13 +80,27 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc with Macro
           Json.parse(sb.toString)(jp, strategy.throwExceptions)
         }
 
+      private def uniqueNonSubstring(s: String) = {
+        var cur, m = 0
+        s foreach { c =>
+          cur = if(c == '_') cur + 1 else 0
+          m = m max cur
+        }
+        "_"*(m + 1)
+      }
+
       /** Extracts values in the structure specified from parsed JSON.  Each element in the JSON
         * structure is compared with the JSON to extract from.  Broadly speaking, elements whose
         * values are specified in the extractor must match, whereas variable elements appearing
         * in the extractor must exist. Lists may not appear in the extractor. */
       def unapplySeq(json: Json): Option[Seq[Json]] = try {
-        var paths: List[SimplePath] = Nil
-        def extract(struct: Any, path: SimplePath): Unit =
+        val placeholder = uniqueNonSubstring(sc.parts.mkString)
+        val PlaceholderNumber = (placeholder+"([0-9]+)"+placeholder).r
+        val next = new Counter(0)
+        val txt = sc.parts.reduceLeft(_ + s""""${placeholder}${next()}${placeholder}" """ + _)
+        val paths: Array[SimplePath] = Array.fill[SimplePath](sc.parts.length - 1)(^)
+        
+        def extract(struct: Any, path: SimplePath): Unit = {
           struct match {
             case d: Double =>
               if(json.extract(path).get[Double](doubleExtractor,
@@ -95,15 +109,19 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc with Macro
               if(json.extract(path).get[String](stringExtractor,
                   strategy.throwExceptions) != s) throw new Exception("Value doesn't match")
             case m: Map[_, _] => m foreach {
-              case (k, v) =>
-                if(v == null) paths ::= (path / k.asInstanceOf[String])
-                else extract(v, path / k.asInstanceOf[String])
+              case (k, v) => v match {
+                case PlaceholderNumber(n) if v.isInstanceOf[String] =>
+                  paths(n.toInt) = path / k.asInstanceOf[String]
+                case _ => extract(v, path / k.asInstanceOf[String])
+              }
             }
             case a: List[_] => ()
               // Emit an exception if attempting to extract on lists
           }
-        extract(jp.parse(sc.parts.mkString("null")).get, ^)
-        val extracts = paths.reverse.map(json.extract)
+        }
+        extract(jp.parse(txt).get, ^)
+        
+        val extracts = paths.map(json.extract)
         if(extracts.exists(_.json == null)) None
         else Some(extracts map { x => new Json(x.normalize) })
       } catch { case e: Exception => None }
@@ -117,7 +135,6 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc with Macro
         case e: NoSuchElementException => throw new ParseException(s)
       })
     }
-
   }
 
   /** Companion object to the `Json` type, providing factory and extractor methods, and a JSON
