@@ -1,24 +1,23 @@
-/**************************************************************************************************
-Rapture I/O Library
-Version 0.8.1
-
-The primary distribution site is
-
-  http://www.propensive.com/
-
-Copyright 2010-2013 Propensive Ltd.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is
-distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing permissions and limitations under the
-License.
-***************************************************************************************************/
-
+/**********************************************************************************************\
+* Rapture I/O Library                                                                          *
+* Version 0.8.2                                                                                *
+*                                                                                              *
+* The primary distribution site is                                                             *
+*                                                                                              *
+*   http://rapture.io/                                                                         *
+*                                                                                              *
+* Copyright 2010-2013 Propensive Ltd.                                                          *
+*                                                                                              *
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
+* except in compliance with the License. You may obtain a copy of the License at               *
+*                                                                                              *
+*   http://www.apache.org/licenses/LICENSE-2.0                                                 *
+*                                                                                              *
+* Unless required by applicable law or agreed to in writing, software distributed under the    *
+* License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,    *
+* either express or implied. See the License for the specific language governing permissions   *
+* and limitations under the License.                                                           *
+\**********************************************************************************************/
 package rapture
 
 import implementation._
@@ -40,8 +39,8 @@ import java.net._
   * byte-streams */
 class BaseIo extends FileHandling with Extracting with MimeHandling with JsonProcessing with
     Encrypting with Encodings with IpHandling with Logging with MimeTyping with Misc with Linking
-    with ClasspathHandling with Shelling with TableFormatting with Finance with FtpHandling with
-    Emailing with Generating with Testing with Zipping with Browsing {
+    with ClasspathHandling with Finance with FtpHandling with
+    Emailing with Generating with Zipping with Browsing {
 
   /** Type class object for reading `Byte`s from `FileUrl`s */
   implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
