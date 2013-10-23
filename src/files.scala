@@ -29,6 +29,18 @@ import java.net._
   * framework. */
 trait LowPriorityFileHandling extends Slurping with Timing {
 
+  @implicitNotFound(msg = "Platform has not been specified. Please import platform.windows, "+
+      "platform.posix or platform.adaptive.")
+  trait Platform { def separator: String }
+  
+  object platform {
+    implicit object windows extends Platform { def separator = "\\" }
+    implicit object posix extends Platform { def separator = "/" }
+    implicit object adaptive extends Platform {
+      def separator = System.getProperty("file.separator")
+    }
+  }
+
   /** Type class object for writing `FileUrl`s as `Output[Stream]`s */
   implicit object FileStreamCharWriter extends StreamWriter[FileUrl, Char] {
     def output(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
@@ -117,8 +129,8 @@ trait LowPriorityFileHandling extends Slurping with Timing {
       if(!b) javaFile.setReadOnly() else writable || (throw new IOException("Can't set writable"))
     
     /** Creates a temporary file beneath this directory with the prefix and suffix specified. */
-    def tempFile(prefix: String = "tmp", suffix: String = "")(implicit eh: ExceptionHandler):
-        eh.![Exception, FileUrl] =
+    def tempFile(prefix: String = "tmp", suffix: String = "")(implicit eh: ExceptionHandler,
+        platform: Platform): eh.![Exception, FileUrl] =
       eh.except(File(java.io.File.createTempFile(prefix, suffix, javaFile)))
     
   }
@@ -130,10 +142,11 @@ trait LowPriorityFileHandling extends Slurping with Timing {
 
     /** Provides a FileUrl for the current working directory, as determined by the user.dir
       * environment variable. */
-    def currentDir = makePath(0, System.getProperty("user.dir").split("/").filter(_ != ""), Map())
+    def currentDir(implicit platform: Platform) =
+      makePath(0, System.getProperty("user.dir").split(platform.separator).filter(_ != ""), Map())
    
     /** Get the user's home directory. */
-    def home = makePath(0, System.getenv("HOME").split("/").filter(_ != ""), Map())
+    def home(implicit platform: Platform) = makePath(0, System.getenv("HOME").split(platform.separator).filter(_ != ""), Map())
 
     /** Method for creating a new instance of this type of URL.
       *
@@ -142,13 +155,14 @@ trait LowPriorityFileHandling extends Slurping with Timing {
       new FileUrl(thisPathRoot, elements.toArray[String])
     
     /** Method for creating a new FileUrl from a java.io.File. */
-    def apply(file: java.io.File) = makePath(0, file.getAbsolutePath.split("\\/"), Map())
+    def apply(file: java.io.File)(implicit platform: Platform) =
+      makePath(0, file.getAbsolutePath.split(platform.separator), Map())
     
     /** Reference to the scheme for this type of URL */
     def scheme: Scheme[FileUrl] = File
    
     /** Pares a path to a file */
-    def parse(s: String) = apply(new java.io.File(s))
+    def parse(s: String)(implicit platform: Platform) = apply(new java.io.File(s))
 
     /** Creates a new FileUrl of the specified resource in the filesystem root.
       *
@@ -261,11 +275,10 @@ trait FileHandling extends LowPriorityFileHandling {
   /** Specifies how file: URLs should be navigable. */
   implicit object NavigableFile extends Navigable[FileUrl] {
     def children(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, List[FileUrl]] = 
-      eh.except(if(url.isFile) Nil else (url.javaFile.list().to[List]) map { fn: String =>
-          url./(fn) })
+      eh.except { if(url.isFile) Nil else url.javaFile.list().to[List].map(url / _) }
     
     def isDirectory(url: FileUrl)(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
-      eh.except(url.javaFile.isDirectory())
+      eh.except { url.javaFile.isDirectory() }
   }
 
 }

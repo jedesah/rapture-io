@@ -241,6 +241,15 @@ trait JsonProcessing extends ExceptionHandling with Linking with Misc with Macro
 
   class JsonExtractor[T](cast: Json => T) extends BasicExtractor[T](x => cast(new Json(x)))
 
+  case class CascadeExtractor[T](casts: (Json => T)*) extends Extractor[T] {
+    def construct(any: Any) = {
+      val json = new Json(any)
+      (casts.foldLeft(None: Option[T]) { case (v, next) =>
+        v orElse { try Some(next(json)) catch { case e: Exception => None } }
+      }).get
+    }
+  }
+
   class Json(private[JsonProcessing] val json: Any, path: List[Either[Int, String]] = Nil)
       extends Dynamic {
 
