@@ -20,8 +20,9 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
-trait Executing extends ExceptionHandling {
+trait Executing {
 
   private val runtime = Runtime.getRuntime
 

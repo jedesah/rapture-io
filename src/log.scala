@@ -20,6 +20,7 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 import scala.annotation.elidable
 import scala.reflect._

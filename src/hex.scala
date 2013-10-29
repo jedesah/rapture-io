@@ -20,8 +20,9 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
-trait Hex extends ExceptionHandling {
+trait Hex {
 
   object Hex {
     def encode(a: Array[Byte]): String =

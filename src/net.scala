@@ -20,6 +20,7 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 import language.existentials
 
@@ -27,7 +28,7 @@ import java.io._
 import java.net._
 
 /** Provides functionality for handling internet URLs, namely HTTP and HTTPS schemes. */
-trait Net extends Linking with JsonProcessing with MimeTyping with Services { this: Streaming =>
+trait Net extends Linking with MimeTyping with Services { this: Streaming =>
 
   object HttpMethods {
     
@@ -85,11 +86,11 @@ trait Net extends Linking with JsonProcessing with MimeTyping with Services { th
     def sender(content: None.type) = ByteArrayInput(Array[Byte](0))
   }
 
-  implicit val JsonPostType = new PostType[Json] {
+  /*implicit val JsonPostType = new PostType[Json] {
     def contentType = Some(MimeTypes.`application/x-www-form-urlencoded`)
     def sender(content: Json) =
       ByteArrayInput(content.toString.getBytes("UTF-8"))
-  }
+  }*/
 
   /** Common methods for `HttpUrl`s */
   trait NetUrl extends Url[NetUrl] with Uri {

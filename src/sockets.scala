@@ -20,12 +20,13 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 import java.io._
 import java.net._
 
 /** Provides classes for creating and listening on sockets.  This code is largely incomplete. */
-trait TcpHandling extends ExceptionHandling with Services with Slurping with Executing {
+trait TcpHandling extends Services with Slurping with Executing {
 
   /** Listens for incoming connections on the specified port
     *

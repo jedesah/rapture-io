@@ -20,6 +20,7 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 trait IpHandling {
 

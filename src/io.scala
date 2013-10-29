@@ -20,6 +20,8 @@
 \**********************************************************************************************/
 package rapture
 
+import rapture.core._
+
 import implementation._
 
 import language.higherKinds
@@ -38,7 +40,7 @@ import java.net._
   * `FileUrl`s should be read and written and  `HttpUrl`s should be read as
   * byte-streams */
 class BaseIo extends FileHandling with Extracting with MimeHandling with
-    Encrypting with Encodings with IpHandling with Logging with MimeTyping with Misc with Linking
+    Encrypting with Encodings with IpHandling with Logging with MimeTyping with Linking
     with ClasspathHandling with Finance with FtpHandling with
     Emailing with Generating with Zipping with Browsing {
 

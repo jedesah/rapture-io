@@ -18,11 +18,12 @@
 * either express or implied. See the License for the specific language governing permissions   *
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
-package object rapture {
+package rapture
+import rapture.core._
 
-  type implicitNotFound = annotation.implicitNotFound
+import java.util.zip._
+import java.io._
 
-  implicit val implicitConversions = language.implicitConversions
-
+package object implementation {
+  implicit val strat = strategy.throwExceptions
 }
-

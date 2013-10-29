@@ -20,11 +20,12 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 import java.io._
 import java.net._
 
-trait LowerPriorityJavaWrapping extends ExceptionHandling with Encodings with Misc { this: Streaming =>
+trait LowerPriorityJavaWrapping extends Encodings { this: Streaming =>
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding):
       StreamReader[T, String] = new StreamReader[T, String] {

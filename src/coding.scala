@@ -20,8 +20,9 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
-trait Codecs extends Encodings with ExceptionHandling {
+trait Codecs extends Encodings {
 
   /** Standard Base64 codec. */
   object Base64 extends Base64Codec

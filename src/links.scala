@@ -20,10 +20,11 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
 import scala.collection.mutable.WrappedArray
 
-trait Linking extends Misc {
+trait Linking {
 
   /** Repenesents a URI scheme */
   trait Scheme[+U <: Uri] {

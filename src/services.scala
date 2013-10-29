@@ -20,8 +20,9 @@
 \**********************************************************************************************/
 package rapture.implementation
 import rapture._
+import rapture.core._
 
-trait Services extends Misc {
+trait Services {
 
   type TcpService = Services.Tcp.Item
   

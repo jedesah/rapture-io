@@ -21,10 +21,11 @@
 package rapture.implementation
 
 import rapture._
+import rapture.core._
 
 import java.net._
 
-trait Encodings extends Misc {
+trait Encodings {
 
   type Encoding = Encodings.Encoding
 
