@@ -44,10 +44,6 @@ class BaseIo extends FileHandling with Extracting with MimeHandling with
     with ClasspathHandling with Finance with FtpHandling with
     Emailing with Generating with Zipping with Browsing {
 
-  /** Type class object for reading `Byte`s from `FileUrl`s */
-  implicit object FileStreamByteReader extends JavaInputStreamReader[FileUrl](f =>
-      new FileInputStream(f.javaFile))
-
   /** Type class object for reading `Byte`s from `HttpUrl`s */
   implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](
       _.javaConnection.getInputStream)
@@ -83,17 +79,6 @@ class BaseIo extends FileHandling with Extracting with MimeHandling with
     def flush() = ()
     def write(t: T) = ()
   }
-
-  implicit object HttpFileUrlLinkable extends Linkable[FileUrl, HttpUrl] {
-    type Result = HttpUrl
-    def link(src: FileUrl, dest: HttpUrl) = dest
-  }
-
-  implicit object HttpFileUrlsLinkable extends Linkable[HttpUrl, FileUrl] {
-    type Result = FileUrl
-    def link(src: HttpUrl, dest: FileUrl) = dest
-  }
-
 
   object JavaResources {
     import language.reflectiveCalls

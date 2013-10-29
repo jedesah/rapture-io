@@ -44,10 +44,6 @@ trait Logging extends FileHandling with TcpHandling with Streaming {
 
   trait Logger { def log(msg: String, level: Level, zone: Zone) }
 
-  case class FileLogger(file: FileUrl) extends Logger {
-    def log(msg: String, level: Level, zone: Zone): Unit = (msg+"\n") >> file
-  }
-
   case object StdoutLogger extends Logger {
     def log(msg: String, level: Level, zone: Zone) = println(msg)
   }
