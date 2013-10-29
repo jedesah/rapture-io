@@ -218,7 +218,7 @@ trait JavaWrapping extends LowPriorityJavaWrapping { this: Streaming =>
     def ready(): Boolean = in.ready()
 
     /** Reads one line from the stream as a `String` */
-    def read() = in.readLine.fromNull
+    def read() = Option(in.readLine)
 
     /** Closes the input stream and underlying `BufferedReader` */
     def close() = in.close()
