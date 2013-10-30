@@ -200,7 +200,7 @@ trait FileHandling extends LowPriorityFileHandling {
         else if(f.isFile) sr.pump(f, dest)
         else if(!recursive) throw new Exception("Cannot copy directory")
         else NavigableFile.children(f).foldLeft(0) { (c, f2) =>
-          c + f2.copyTo(dest / f.filename, overwrite, recursive)
+          c + f2.copyTo(dest / f2.filename, overwrite, recursive)
         }
       } else {
         if(f.isFile) sr.pump(f, dest) else {
