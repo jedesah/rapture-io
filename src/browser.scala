@@ -29,7 +29,7 @@ import scala.collection.mutable.HashMap
 trait Browsing extends Streaming {
 
   case class Cookie(domain: String, name: String, value: String, path: SimplePath,
-      expiry: Option[Time.DateTime], secure: Boolean) {
+      expiry: Option[DateTime], secure: Boolean) {
     lazy val pathString = path.toString
   }
   
@@ -48,14 +48,14 @@ trait Browsing extends Streaming {
       Cookie(details.get("domain").getOrElse(domain), ps.head._1, ps.head._2,
           SimplePath.parse(details.get("path").getOrElse("")),
           details.get("expires") flatMap { exp =>
-          Time.DateTime.unapply(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.FULL,
+          DateTime.unapply(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.FULL,
           java.text.DateFormat.FULL).parse(exp).getTime) }, details.contains("secure"))
     }
 
     def domainCookies(domain: String, secure: Boolean, path: String): String = {
       
       cookies foreach { c =>
-        if(c._2.expiry.map(_ < Time.now()).getOrElse(false))
+        if(c._2.expiry.map(_ < now()).getOrElse(false))
           cookies.remove((c._2.domain, c._2.name, c._2.path))
       }
 
