@@ -21,6 +21,7 @@
 package rapture.implementation
 import rapture._
 import rapture.core._
+import rapture.json._
 
 import language.existentials
 
@@ -86,11 +87,11 @@ trait Net extends Linking with MimeTyping with Services { this: Streaming =>
     def sender(content: None.type) = ByteArrayInput(Array[Byte](0))
   }
 
-  /*implicit val JsonPostType = new PostType[Json] {
+  implicit val JsonPostType = new PostType[Json] {
     def contentType = Some(MimeTypes.`application/x-www-form-urlencoded`)
     def sender(content: Json) =
       ByteArrayInput(content.toString.getBytes("UTF-8"))
-  }*/
+  }
 
   /** Common methods for `HttpUrl`s */
   trait NetUrl extends Url[NetUrl] with Uri {
