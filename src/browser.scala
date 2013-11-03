@@ -21,11 +21,12 @@
 package rapture.implementation
 import rapture._
 import rapture.core._
+import rapture.time._
 
 import scala.xml._
 import scala.collection.mutable.HashMap
 
-trait Browsing extends Streaming with Timing {
+trait Browsing extends Streaming {
 
   case class Cookie(domain: String, name: String, value: String, path: SimplePath,
       expiry: Option[Time.DateTime], secure: Boolean) {
