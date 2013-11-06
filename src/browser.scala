@@ -21,10 +21,13 @@
 package rapture.implementation
 import rapture._
 import rapture.core._
+import rapture.implementation.Timing.Time
 import rapture.time._
 
 import scala.xml._
 import scala.collection.mutable.HashMap
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 trait Browsing extends Streaming {
 
@@ -32,9 +35,10 @@ trait Browsing extends Streaming {
       expiry: Option[DateTime], secure: Boolean) {
     lazy val pathString = path.toString
   }
-  
+
   class Browser {
     val browserString = "Rapture I/O Browser 0.8.1"
+    val PATTERN_RFC1036 = "EEE, dd-MMM-yyyy HH:mm:ss zzz";
 
     val cookies: HashMap[(String, String, SimplePath), Cookie] =
       new HashMap[(String, String, SimplePath), Cookie]
@@ -44,12 +48,12 @@ trait Browsing extends Streaming {
         a(0).toLowerCase -> (if(a.length > 1) a(1).urlDecode else "")
       }
       val details = ps.tail.toMap
-      
+
       Cookie(details.get("domain").getOrElse(domain), ps.head._1, ps.head._2,
-          SimplePath.parse(details.get("path").getOrElse("")),
-          details.get("expires") flatMap { exp =>
-          DateTime.unapply(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.FULL,
-          java.text.DateFormat.FULL).parse(exp).getTime) }, details.contains("secure"))
+        SimplePath.parse(details.get("path").getOrElse("")),
+        details.get("expires") flatMap { exp =>
+          Time.DateTime.unapply(new SimpleDateFormat(PATTERN_RFC1036, Locale.US).parse(exp).getTime)
+        }, details.contains("secure"))
     }
 
     def domainCookies(domain: String, secure: Boolean, path: String): String = {
