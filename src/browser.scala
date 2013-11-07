@@ -21,7 +21,6 @@
 package rapture.implementation
 import rapture._
 import rapture.core._
-import rapture.implementation.Timing.Time
 import rapture.time._
 
 import scala.xml._
@@ -37,8 +36,8 @@ trait Browsing extends Streaming {
   }
 
   class Browser {
-    val browserString = "Rapture I/O Browser 0.8.1"
-    val PATTERN_RFC1036 = "EEE, dd-MMM-yyyy HH:mm:ss zzz";
+    val browserString = "Rapture I/O Browser 0.9.0"
+    private val Rfc1036Pattern = "EEE, dd-MMM-yyyy HH:mm:ss zzz"
 
     val cookies: HashMap[(String, String, SimplePath), Cookie] =
       new HashMap[(String, String, SimplePath), Cookie]
@@ -52,7 +51,7 @@ trait Browsing extends Streaming {
       Cookie(details.get("domain").getOrElse(domain), ps.head._1, ps.head._2,
         SimplePath.parse(details.get("path").getOrElse("")),
         details.get("expires") flatMap { exp =>
-          Time.DateTime.unapply(new SimpleDateFormat(PATTERN_RFC1036, Locale.US).parse(exp).getTime)
+          DateTime.unapply(new SimpleDateFormat(Rfc1036Pattern, Locale.US).parse(exp).getTime)
         }, details.contains("secure"))
     }
 
