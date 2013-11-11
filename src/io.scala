@@ -42,17 +42,11 @@ import java.net._
 class BaseIo extends FileHandling with Extracting with MimeHandling with
     Encrypting with Encodings with IpHandling with Logging with MimeTyping with Linking
     with ClasspathHandling with Finance with FtpHandling with
-    Generating with Zipping with Browsing {
+    Zipping with Browsing {
 
   /** Type class object for reading `Byte`s from `HttpUrl`s */
   implicit object HttpStreamByteReader extends JavaInputStreamReader[HttpUrl](
       _.javaConnection.getInputStream)
-
-  implicit val procByteStreamReader =
-    new JavaInputStreamReader[Proc](_.process.getInputStream)
-
-  implicit val procByteStreamWriter =
-    new JavaOutputStreamWriter[Proc](_.process.getOutputStream)
 
   implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
