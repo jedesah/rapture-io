@@ -28,7 +28,7 @@ import scala.reflect._
 
 import language.higherKinds
 
-trait LowPriorityStreaming extends JavaWrapping with Digesting with UrlHandling with Net { this:
+trait LowPriorityStreaming extends JavaWrapping with UrlHandling with Net { this:
     Streaming =>
   implicit def stringByteReader(implicit encoding: Encoding) = new StreamReader[String, Byte] {
     def input(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =

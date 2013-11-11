@@ -26,7 +26,7 @@ import scala.annotation.elidable
 import scala.reflect._
 
 // Rewrite using actors
-trait Logging extends FileHandling with TcpHandling with Streaming {
+trait Logging extends Navigation with TcpHandling with Streaming {
 
   /** Basic logging functionality, introducing the concept of logging zones. Note that this is
     * almost certainly not as efficient as it ought to be, so use something else if efficiency

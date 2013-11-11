@@ -21,6 +21,7 @@
 package rapture.implementation
 import rapture._
 import rapture.core._
+import rapture.crypto._
 
 import scala.reflect._
 

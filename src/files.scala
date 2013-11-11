@@ -25,7 +25,7 @@ import rapture.core._
 import java.io._
 import java.net._
 
-trait FileHandling extends Slurping {
+trait Navigation extends Slurping {
 
   trait Navigable[UrlType] {
     def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, List[UrlType]]
