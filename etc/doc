@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p bin && \
+scaladoc -d doc -cp ../core/core.jar:../json/json.jar:../time/time.jar src/*.scala

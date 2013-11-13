@@ -18,14 +18,13 @@
 * either express or implied. See the License for the specific language governing permissions   *
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
-package rapture.implementation
-import rapture._
+package rapture.io
 import rapture.core._
 
 import java.util.zip._
 import java.io._
 
-trait Zipping extends Streaming {
+object Zip {
 
   def zip(data: Map[SimplePath, Input[Byte]], comment: String = null, level: Int = 9): Input[Byte] with TypedInput = {
     val baos = new ByteArrayOutputStream()

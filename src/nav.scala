@@ -18,52 +18,53 @@
 * either express or implied. See the License for the specific language governing permissions   *
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
-package rapture.implementation
-import rapture._
+package rapture.io
 import rapture.core._
 
 import java.io._
 import java.net._
 
-trait Navigation extends Slurping {
-
-  trait Navigable[UrlType] {
-    def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, List[UrlType]]
-    
-    /** Returns false if the filesystem object represented by this FileUrl is a file, and true if
-      * it is a directory. */
-    def isDirectory(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Boolean]
-    
-    /** If this represents a directory, returns an iterator over all its descendants,
-      * otherwise returns the empty iterator. */
-    def descendants(url: UrlType)(implicit eh: ExceptionHandler):
-        eh.![Exception, Iterator[UrlType]] =
-      eh.except {
-        children(url).iterator.flatMap { c =>
-          if(isDirectory(c)) Iterator(c) ++ descendants(c)
-          else Iterator(c)
-        }
-      }
-  }
-
-  implicit class NavigableExtras[UrlType: Navigable](url: UrlType) {
-    
-    /** Return a list of children of this URL */
-    def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
-    
-    /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
-    def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
-      eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(strategy.throwExceptions))
-
-    /** Return an iterator of all descendants of this URL. */
-    def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
-      eh.except(implicitly[Navigable[UrlType]].descendants(url)(strategy.throwExceptions))
+trait Navigable[UrlType] {
   
-    def walkFilter(cond: UrlType => Boolean)(implicit eh: ExceptionHandler):
-        eh.![Exception, List[UrlType]] = eh.except {
-      children(strategy.throwExceptions) filter cond flatMap { f =>
-        new NavigableExtras(f).walkFilter(cond)
+  private implicit val errorHandler = raw
+  
+  def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, List[UrlType]]
+  
+  /** Returns false if the filesystem object represented by this FileUrl is a file, and true if
+    * it is a directory. */
+  def isDirectory(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Boolean]
+  
+  /** If this represents a directory, returns an iterator over all its descendants,
+    * otherwise returns the empty iterator. */
+  def descendants(url: UrlType)(implicit eh: ExceptionHandler):
+      eh.![Exception, Iterator[UrlType]] =
+    eh.except {
+      children(url).iterator.flatMap { c =>
+        if(isDirectory(c)) Iterator(c) ++ descendants(c)
+        else Iterator(c)
       }
+    }
+}
+
+class NavigableExtras[UrlType: Navigable](url: UrlType) {
+  
+  protected implicit val errorHandler = raw
+  
+  /** Return a list of children of this URL */
+  def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
+  
+  /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
+  def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
+    eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(raw))
+
+  /** Return an iterator of all descendants of this URL. */
+  def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
+    eh.except(implicitly[Navigable[UrlType]].descendants(url)(raw))
+
+  def walkFilter(cond: UrlType => Boolean)(implicit eh: ExceptionHandler):
+      eh.![Exception, List[UrlType]] = eh.except {
+    children(raw) filter cond flatMap { f =>
+      new NavigableExtras(f).walkFilter(cond)
     }
   }
 }

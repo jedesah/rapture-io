@@ -18,11 +18,10 @@
 * either express or implied. See the License for the specific language governing permissions   *
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
-package rapture.implementation
-import rapture._
+package rapture.io
 import rapture.core._
 
-trait Finance {
+object Finance {
 
   trait Usd
   trait Gbp
@@ -98,5 +97,4 @@ trait Finance {
     def /(n: Int): Money[T] = this * (1.0/n)
     def /(n: Double): Money[T] = this * (1.0/n)
   }
-
 }
