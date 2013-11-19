@@ -25,51 +25,61 @@ import java.util.zip._
 import java.io._
 import language.higherKinds
 
-package object io {
+trait LowPriorityImplicits {
+  import rapture.io._
+
+
+}
+
+package object io extends LowPriorityImplicits {
   
   type Encoding = Encodings.Encoding
   
   private implicit val errorHandler = raw
   
-  implicit def stringByteReader(implicit encoding: Encoding) = new StreamReader[String, Byte] {
-    def input(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-      eh.except(ByteArrayInput(s.getBytes(encoding.name)))
-  }
+  implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
+    new StreamReader[String, Byte] {
+      def input(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
+        eh.except(ByteArrayInput(s.getBytes(encoding.name)))
+    }
 
-  implicit def inputStreamReader[T, I[T] <: Input[T]] = new StreamReader[I[T], T] {
-    def input(in: I[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] =
-      eh.except(in) 
-  }
+  implicit def inputStreamReader[T, I[T] <: Input[T]]: StreamReader[I[T], T] =
+    new StreamReader[I[T], T] {
+      def input(in: I[T])(implicit eh: ExceptionHandler): eh.![Exception, Input[T]] =
+        eh.except(in) 
+    }
 
-  /** Provides methods for URLs which can be written to as streams, most importantly for getting an
-    * `Output` */
-  implicit def makeWritable[UrlType](url: UrlType): Writable[UrlType] = new Writable[UrlType](url)
+  /** Provides methods for URLs which can be written to as streams, most importantly for getting
+    * an `Output` */
+  implicit def makeWritable[UrlType](url: UrlType): Writable[UrlType] =
+    new Writable[UrlType](url)
 
-  implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding):
-      StreamReader[T, String] = new StreamReader[T, String] {
+  implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
+      encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
     def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
       eh.except(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
-  implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T], encoding: Encoding):
-      StreamWriter[T, String] = new StreamWriter[T, String] {
+  implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
+      encoding: Encoding): StreamWriter[T, String] = new StreamWriter[T, String] {
     def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[String]] =
       eh.except(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
-  implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T], encoding: Encoding):
-      StreamReader[T, Char] = new StreamReader[T, Char] {
+  implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T],
+      encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {
     def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
       eh.except(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
-  implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T], encoding: Encoding):
-      StreamWriter[T, Char] = new StreamWriter[T, Char] {
+  implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
+      encoding: Encoding): StreamWriter[T, Char] = new StreamWriter[T, Char] {
     def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
       eh.except(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
-  implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream, String] =
+  implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream,
+      String] =
     new InputBuilder[InputStream, String] {
       def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
         eh.except(new LineInput(new InputStreamReader(s, encoding.name)))
@@ -78,19 +88,22 @@ package object io {
   implicit def stringOutputBuilder(implicit encoding: Encoding):
       OutputBuilder[OutputStream, String] =
     new OutputBuilder[OutputStream, String] {
-      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[String]] =
+      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception,
+          Output[String]] =
         eh.except(new LineOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
   /** Views an `Input[Byte]` as a `java.io.InputStream` */
-  implicit def inputStreamUnwrapper(is: Input[Byte]) =
+  implicit def inputStreamUnwrapper(is: Input[Byte]): InputStream =
     new InputStream { def read() = is.read().map(_.toInt).getOrElse(-1) }
 
   /** Type class definition for creating an Output[Char] from a Java OutputStream, taking an
     * [[Encoding]] implicitly for converting between `Byte`s and `Char`s */
-  implicit def outputStreamCharBuilder(implicit encoding: Encoding) =
+  implicit def outputStreamCharBuilder(implicit encoding: Encoding):
+      OutputBuilder[OutputStream, Char] =
     new OutputBuilder[OutputStream, Char] {
-      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
+      def output(s: OutputStream)(implicit eh: ExceptionHandler):
+          eh.![Exception, Output[Char]] =
         eh.except(new CharOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
@@ -103,52 +116,46 @@ package object io {
         eh.except(new CharInput(new InputStreamReader(s, encoding.name)))
     }
 
-  implicit def stdoutWriter[Data] = new StreamWriter[Stdout[Data], Data] {
+  implicit def stdoutWriter[Data]: StreamWriter[Stdout[Data], Data] =
+      new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
-    def output(stdout: Stdout[Data])(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except[Exception, Output[Data]](stdout.output)
+    def output(stdout: Stdout[Data])(implicit eh: ExceptionHandler):
+        eh.![Exception, Output[Data]] = eh.except[Exception, Output[Data]](stdout.output)
   }
 
-  implicit def stderrWriter[Data] = new StreamWriter[Stderr[Data], Data] {
-    override def doNotClose = true
-    def output(stderr: Stderr[Data])(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-      eh.except[Exception, Output[Data]](stderr.output)
+  implicit def stderrWriter[Data]: StreamWriter[Stderr[Data], Data] =
+    new StreamWriter[Stderr[Data], Data] {
+      override def doNotClose = true
+      def output(stderr: Stderr[Data])(implicit eh: ExceptionHandler):
+          eh.![Exception, Output[Data]] = eh.except[Exception, Output[Data]](stderr.output)
   }
 
-  implicit def stdin[Data] = new StreamReader[Stdin[Data], Data] {
-    override def doNotClose = true
-    def input(stdin: Stdin[Data])(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]] =
-      eh.except[Exception, Input[Data]](stdin.input)
-  }
+  implicit def stdin[Data]: StreamReader[Stdin[Data], Data] =
+    new StreamReader[Stdin[Data], Data] {
+      override def doNotClose = true
+      def input(stdin: Stdin[Data])(implicit eh: ExceptionHandler):
+          eh.![Exception, Input[Data]] = eh.except[Exception, Input[Data]](stdin.input)
+    }
 
-  def randomGuid() = java.util.UUID.randomUUID().toString
-
-  def DevNull[T] = new Output[T] {
+  def DevNull[T]: Output[T] = new Output[T] {
     def close() = ()
     def flush() = ()
     def write(t: T) = ()
   }
 
-  val $ = ""
+  /** Convenient empty string for terminating a path (which should end in a /). */
+  val `$`: String = ""
 
   /** The canonical root for a simple path */
-  val ^ = new SimplePath(Nil, Map())
+  val `^`: SimplePath = new SimplePath(Nil, Map())
 
   type AfterPath = Map[Char, (String, Double)]
   
-  /** Allows for easy construction of relative paths from `String`s */
-  implicit def stringToRelativePath(string: String) = new {
-    /** Constructs a relative path from the path components `string` and `string2`
-      *
-      * @param string2 the second component of the relative path to be constructed */
-    def /(string2: String) = new RelativePath(0, Array(string, string2), Map())
-  }
-
-  implicit val inputStreamBuilder: InputBuilder[InputStream, Byte] = InputStreamBuilder
-  implicit val outputStreamBuilder: OutputBuilder[OutputStream, Byte] = OutputStreamBuilder
-  implicit val readerBuilder: InputBuilder[Reader, Char] = ReaderBuilder
-  implicit val lineReaderBuilder: InputBuilder[Reader, String] = LineReaderBuilder
-  implicit val writerBuilder: OutputBuilder[Writer, Char] = WriterBuilder
+  implicit val buildInputStream: InputBuilder[InputStream, Byte] = InputStreamBuilder
+  implicit val buildOutputStream: OutputBuilder[OutputStream, Byte] = OutputStreamBuilder
+  implicit val buildReader: InputBuilder[Reader, Char] = ReaderBuilder
+  implicit val buildLineReader: InputBuilder[Reader, String] = LineReaderBuilder
+  implicit val buildWriter: OutputBuilder[Writer, Char] = WriterBuilder
 
   implicit val simplePathsLinkable: Linkable[SimplePath, SimplePath] = SimplePathsLinkable
 
@@ -156,19 +163,26 @@ package object io {
   implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
   implicit val charAccumulator: AccumulatorBuilder[Char] = CharAccumulator
 
-  implicit val appenderBuilder: AppenderBuilder[Writer, Char] = AppenderBuilder
+  implicit val buildAppender: AppenderBuilder[Writer, Char] = AppenderBuilder
   implicit val stringCharReader: StreamReader[String, Char] = StringCharReader
   implicit val byteArrayReader: StreamReader[Array[Byte], Byte] = ByteArrayReader
 
-  implicit val classpathStreamByteReader: JavaInputStreamReader[ClasspathUrl] = ClasspathStreamByteReader
+  implicit val classpathStreamByteReader: JavaInputStreamReader[ClasspathUrl] =
+    ClasspathStreamByteReader
 
-  def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit): Result =
-    Utils.ensuring[Result, Stream](create)(body)(close)
+  def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
+      Result = Utils.ensuring[Result, Stream](create)(body)(close)
 
-  implicit def slurpable[UrlType](url: UrlType): Slurpable[UrlType] = new Slurpable[UrlType](url)
-  implicit def appendable[UrlType](url: UrlType): Appendable[UrlType] = new Appendable[UrlType](url)
+  implicit def slurpable[UrlType](url: UrlType): Slurpable[UrlType] =
+    new Slurpable[UrlType](url)
+  
+  implicit def appendable[UrlType](url: UrlType): Appendable[UrlType] =
+    new Appendable[UrlType](url)
+  
   implicit def readable[UrlType](url: UrlType): Readable[UrlType] = new Readable[UrlType](url)
-  implicit def urlCodec(s: String): UrlCodec = new UrlCodec(s)
-  implicit def navigableExtras[UrlType: Navigable](url: UrlType): NavigableExtras[UrlType] = new NavigableExtras(url)
+  implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
+  
+  implicit def navigableExtras[UrlType: Navigable](url: UrlType): NavigableExtras[UrlType] =
+    new NavigableExtras(url)
 
 }

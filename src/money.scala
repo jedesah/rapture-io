@@ -37,18 +37,18 @@ object Finance {
   trait Rub
 
   class Currency[T](val code: String, val name: String, val dp: Int, val prefix: String)
-  implicit object GbpCurrency extends Currency[Gbp]("GBP", "Pounds Sterling", 2, "£")
-  implicit object UsdCurrency extends Currency[Usd]("USD", "US Dollars", 2, "$")
-  implicit object ChfCurrency extends Currency[Chf]("CHF", "Swiss Francs", 2, "Fr")
-  implicit object EurCurrency extends Currency[Eur]("EUR", "Euros", 2, "€")
-  implicit object CadCurrency extends Currency[Cad]("CAD", "Canadian Dollars", 2, "$")
-  implicit object CnyCurrency extends Currency[Cny]("CNY", "Chinese Yuan", 2, "¥")
-  implicit object DkkCurrency extends Currency[Dkk]("DKK", "Danish Krone", 2, "kr")
-  implicit object InrCurrency extends Currency[Inr]("INR", "Indian Rupees", 2, "Rs")
-  implicit object JpyCurrency extends Currency[Jpy]("JPY", "Japanese Yen", 2, "¥")
-  implicit object NokCurrency extends Currency[Nok]("NOK", "Norwegian Krone", 2, "kr")
-  implicit object NzdCurrency extends Currency[Nzd]("NZD", "New Zealand Dollars", 2, "$")
-  implicit object RubCurrency extends Currency[Rub]("RUB", "Russian Rubles", 2, "р")
+  implicit val GbpCurrency = new Currency[Gbp]("GBP", "Pounds Sterling", 2, "£")
+  implicit val UsdCurrency = new Currency[Usd]("USD", "US Dollars", 2, "$")
+  implicit val ChfCurrency = new Currency[Chf]("CHF", "Swiss Francs", 2, "Fr")
+  implicit val EurCurrency = new Currency[Eur]("EUR", "Euros", 2, "€")
+  implicit val CadCurrency = new Currency[Cad]("CAD", "Canadian Dollars", 2, "$")
+  implicit val CnyCurrency = new Currency[Cny]("CNY", "Chinese Yuan", 2, "¥")
+  implicit val DkkCurrency = new Currency[Dkk]("DKK", "Danish Krone", 2, "kr")
+  implicit val InrCurrency = new Currency[Inr]("INR", "Indian Rupees", 2, "Rs")
+  implicit val JpyCurrency = new Currency[Jpy]("JPY", "Japanese Yen", 2, "¥")
+  implicit val NokCurrency = new Currency[Nok]("NOK", "Norwegian Krone", 2, "kr")
+  implicit val NzdCurrency = new Currency[Nzd]("NZD", "New Zealand Dollars", 2, "$")
+  implicit val RubCurrency = new Currency[Rub]("RUB", "Russian Rubles", 2, "р")
 
   trait MoneyFactory[T] { def apply(d: Double)(implicit currency: Currency[T]) = new Money[T](d) }
 

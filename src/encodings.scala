@@ -63,10 +63,3 @@ object Encodings extends Lookup[String] {
   lazy val Default = lookup(System.getProperty("file.encoding"))
 
 }
-
-class UrlCodec(s: String) {
-  @inline def urlEncode(implicit encoding: Encoding = Encodings.`UTF-8`) =
-    URLEncoder.encode(s, encoding.name)
-  @inline def urlDecode(implicit encoding: Encoding = Encodings.`UTF-8`) =
-    URLDecoder.decode(s, encoding.name)
-}
