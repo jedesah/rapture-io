@@ -27,8 +27,7 @@ import language.higherKinds
 
 trait LowPriorityImplicits {
   import rapture.io._
-
-
+  implicit val byteAccumulator: AccumulatorBuilder[Byte] = ByteAccumulator
 }
 
 package object io extends LowPriorityImplicits {
@@ -51,8 +50,8 @@ package object io extends LowPriorityImplicits {
 
   /** Provides methods for URLs which can be written to as streams, most importantly for getting
     * an `Output` */
-  implicit def makeWritable[UrlType](url: UrlType): Writable[UrlType] =
-    new Writable[UrlType](url)
+  implicit def makeWritable[Res](url: Res): Writable[Res] =
+    new Writable[Res](url)
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
@@ -159,7 +158,6 @@ package object io extends LowPriorityImplicits {
 
   implicit val simplePathsLinkable: Linkable[SimplePath, SimplePath] = SimplePathsLinkable
 
-  implicit val byteAccumulator: AccumulatorBuilder[Byte] = ByteAccumulator
   implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
   implicit val charAccumulator: AccumulatorBuilder[Char] = CharAccumulator
 
@@ -173,16 +171,16 @@ package object io extends LowPriorityImplicits {
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
       Result = Utils.ensuring[Result, Stream](create)(body)(close)
 
-  implicit def slurpable[UrlType](url: UrlType): Slurpable[UrlType] =
-    new Slurpable[UrlType](url)
+  implicit def slurpable[Res](url: Res): Slurpable[Res] =
+    new Slurpable[Res](url)
   
-  implicit def appendable[UrlType](url: UrlType): Appendable[UrlType] =
-    new Appendable[UrlType](url)
+  implicit def appendable[Res](url: Res): Appendable[Res] =
+    new Appendable[Res](url)
   
-  implicit def readable[UrlType](url: UrlType): Readable[UrlType] = new Readable[UrlType](url)
+  implicit def readable[Res](url: Res): Readable[Res] = new Readable[Res](url)
   implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
   
-  implicit def navigableExtras[UrlType: Navigable](url: UrlType): NavigableExtras[UrlType] =
+  implicit def navigableExtras[Res: Navigable](url: Res): NavigableExtras[Res] =
     new NavigableExtras(url)
 
 }
