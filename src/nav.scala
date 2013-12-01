@@ -28,17 +28,17 @@ trait Navigable[UrlType] {
   
   private implicit val errorHandler = raw
   
-  def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, List[UrlType]]
+  def children(url: UrlType)(implicit eh: ExceptionHandler): eh.![List[UrlType], Exception]
   
   /** Returns false if the filesystem object represented by this FileUrl is a file, and true if
     * it is a directory. */
-  def isDirectory(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Boolean]
+  def isDirectory(url: UrlType)(implicit eh: ExceptionHandler): eh.![Boolean, Exception]
   
   /** If this represents a directory, returns an iterator over all its descendants,
     * otherwise returns the empty iterator. */
   def descendants(url: UrlType)(implicit eh: ExceptionHandler):
-      eh.![Exception, Iterator[UrlType]] =
-    eh.except {
+      eh.![Iterator[UrlType], Exception] =
+    eh.wrap {
       children(url).iterator.flatMap { c =>
         if(isDirectory(c)) Iterator(c) ++ descendants(c)
         else Iterator(c)
@@ -54,15 +54,15 @@ class NavigableExtras[UrlType: Navigable](url: UrlType) {
   def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
   
   /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
-  def isDirectory(implicit eh: ExceptionHandler): eh.![Exception, Boolean] =
-    eh.except(implicitly[Navigable[UrlType]].isDirectory(url)(raw))
+  def isDirectory(implicit eh: ExceptionHandler): eh.![Boolean, Exception] =
+    eh.wrap(implicitly[Navigable[UrlType]].isDirectory(url)(raw))
 
   /** Return an iterator of all descendants of this URL. */
-  def descendants(implicit eh: ExceptionHandler): eh.![Exception, Iterator[UrlType]] =
-    eh.except(implicitly[Navigable[UrlType]].descendants(url)(raw))
+  def descendants(implicit eh: ExceptionHandler): eh.![Iterator[UrlType], Exception] =
+    eh.wrap(implicitly[Navigable[UrlType]].descendants(url)(raw))
 
   def walkFilter(cond: UrlType => Boolean)(implicit eh: ExceptionHandler):
-      eh.![Exception, List[UrlType]] = eh.except {
+      eh.![List[UrlType], Exception] = eh.wrap {
     children(raw) filter cond flatMap { f =>
       new NavigableExtras(f).walkFilter(cond)
     }

@@ -43,18 +43,18 @@ object Utils {
 }
 
 case class Stdout[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
-  def output(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-    eh.except(outputBuilder.output(System.out)(raw))
+  def output(implicit eh: ExceptionHandler): eh.![Output[Data], Exception] =
+    eh.wrap(outputBuilder.output(System.out)(raw))
 }
 
 case class Stderr[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
-  def output(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]] =
-    eh.except(outputBuilder.output(System.err)(raw))
+  def output(implicit eh: ExceptionHandler): eh.![Output[Data], Exception] =
+    eh.wrap(outputBuilder.output(System.err)(raw))
 }
 
 case class Stdin[Data](implicit inputBuilder: InputBuilder[InputStream, Data]) {
-  def input(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]] =
-    eh.except(inputBuilder.input(System.in)(raw))
+  def input(implicit eh: ExceptionHandler): eh.![Input[Data], Exception] =
+    eh.wrap(inputBuilder.input(System.in)(raw))
 }
 
 /** Makes a `String` viewable as an `rapture.io.Input[Char]` */
@@ -69,7 +69,7 @@ case class ByteArrayInput(array: Array[Byte]) extends ByteInput(new ByteArrayInp
   *         such as `java.io.InputStream` or `java.io.Reader`
   * @tparam Data The type of data that the `Input` carries */
 trait InputBuilder[InputType, Data] {
-  def input(s: InputType)(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]]
+  def input(s: InputType)(implicit eh: ExceptionHandler): eh.![Input[Data], Exception]
 }
 
 /** Type trait for building a new `Output[Data]` from particular kind of output stream
@@ -78,7 +78,7 @@ trait InputBuilder[InputType, Data] {
   *         such as [[java.io.OutputStream]] or [[java.io.Writer]]
   * @tparam Data The type of data that the [[Output]] carries */
 trait OutputBuilder[OutputType, Data] {
-  def output(s: OutputType)(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]]
+  def output(s: OutputType)(implicit eh: ExceptionHandler): eh.![Output[Data], Exception]
 }
 
 object AppenderBuilder extends AppenderBuilder[Writer, Char] {
@@ -112,13 +112,13 @@ class Readable[UrlType](url: UrlType) {
 
   /** Gets the input for the resource specified in this URL */
   def input[Data](implicit sr: StreamReader[UrlType, Data], eh: ExceptionHandler):
-    eh.![Exception, Input[Data]] = eh.except(sr.input(url))
+    eh.![Input[Data], Exception] = eh.wrap(sr.input(url))
  
   /** Pumps the input for the specified resource to the destination URL provided */
   def >[Data, DestUrlType](dest: DestUrlType)(implicit sr:
       StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], eh: ExceptionHandler,
-      mf: ClassTag[Data]): eh.![Exception, Int] =
-    eh.except(handleInput[Data, Int] { in =>
+      mf: ClassTag[Data]): eh.![Int, Exception] =
+    eh.wrap(handleInput[Data, Int] { in =>
       makeWritable(dest).handleOutput[Data, Int](in pumpTo _)
     })
   
@@ -131,8 +131,8 @@ class Readable[UrlType](url: UrlType) {
 
   def >>[Data, DestUrlType](dest: DestUrlType)(implicit sr:
       StreamReader[UrlType, Data], sw: StreamAppender[DestUrlType, Data], eh: ExceptionHandler,
-      mf: ClassTag[Data]): eh.![Exception, Int] =
-    eh.except(handleInput[Data, Int] { in =>
+      mf: ClassTag[Data]): eh.![Int, Exception] =
+    eh.wrap(handleInput[Data, Int] { in =>
       dest.handleAppend[Data, Int](in pumpTo _)
     })
 
@@ -141,8 +141,8 @@ class Readable[UrlType](url: UrlType) {
     * @tparam Data The type that the data should be pumped as
     * @param out The destination for data to be pumped to */
   def >[Data](out: Output[Data])(implicit sr: StreamReader[UrlType, Data],
-      eh: ExceptionHandler, mf: ClassTag[Data]): eh.![Exception, Int] =
-    eh.except(handleInput[Data, Int](_ pumpTo out))
+      eh: ExceptionHandler, mf: ClassTag[Data]): eh.![Int, Exception] =
+    eh.wrap(handleInput[Data, Int](_ pumpTo out))
 
   /** Carefully handles writing to the input stream, ensuring that it is closed following
     * data being written to the stream. Handling an input stream which is already being handled
@@ -166,7 +166,7 @@ class Writable[UrlType](url: UrlType) {
     *
     * @tparam Data The type of data to be carried by the `Output` */
   def output[Data](implicit sw: StreamWriter[UrlType, Data], eh: ExceptionHandler):
-      eh.![Exception, Output[Data]] = eh.except(sw.output(url))
+      eh.![Output[Data], Exception] = eh.wrap(sw.output(url))
   
   /** Carefully handles writing to the output stream, ensuring that it is closed following
     * data being written.
@@ -188,16 +188,16 @@ class Writable[UrlType](url: UrlType) {
 @implicitNotFound(msg = "Cannot write ${Data} data to ${UrlType} resources.")
 trait StreamWriter[-UrlType, @specialized(Byte, Char) Data] {
   def doNotClose = false
-  def output(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]]
+  def output(url: UrlType)(implicit eh: ExceptionHandler): eh.![Output[Data], Exception]
 }
 
 trait StreamAppender[-UrlType, Data] {
   def doNotClose = false
-  def appendOutput(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Output[Data]]
+  def appendOutput(url: UrlType)(implicit eh: ExceptionHandler): eh.![Output[Data], Exception]
 }
 
 /*  Extract the encoding from an HTTP stream */
-/*private def extractEncoding(huc: HttpURLConnection): eh.![Exception, String] = eh.except {
+/*private def extractEncoding(huc: HttpURLConnection): eh.![String, Exception] = eh.wrap {
   
   huc.getContentEncoding match {
     case null =>
@@ -411,7 +411,7 @@ trait StreamReader[-UrlType, @specialized(Byte, Char) Data] {
     *
     * @param url The URL to get the input stream from
     * @return an `Input[Data]` for the specified URL */
-  def input(url: UrlType)(implicit eh: ExceptionHandler): eh.![Exception, Input[Data]]
+  def input(url: UrlType)(implicit eh: ExceptionHandler): eh.![Input[Data], Exception]
   
   /** Pumps data from the specified URL to the given destination URL */
   def pump[DestUrlType <: Url[DestUrlType]](url: UrlType, dest: DestUrlType)(implicit sw:
@@ -421,12 +421,12 @@ trait StreamReader[-UrlType, @specialized(Byte, Char) Data] {
 
 /** Type class object for reading `Char`s from a `String` */
 object StringCharReader extends StreamReader[String, Char] {
-  def input(s: String)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
-    eh.except(StringIsInput(s))
+  def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Char], Exception] =
+    eh.wrap(StringIsInput(s))
 }
 
 /** Type class object for reading `Byte`s from a `Array[Byte]` */
 object ByteArrayReader extends StreamReader[Array[Byte], Byte] {
-  def input(s: Array[Byte])(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-    eh.except(ByteArrayInput(s))
+  def input(s: Array[Byte])(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
+    eh.wrap(ByteArrayInput(s))
 }

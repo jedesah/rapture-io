@@ -26,18 +26,18 @@ import java.net._
 
 /** Type class object for creating an Input[Byte] from a Java InputStream */
 object InputStreamBuilder extends InputBuilder[InputStream, Byte] {
-  def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-    eh.except(new ByteInput(s))
+  def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
+    eh.wrap(new ByteInput(s))
 }
 
 /** Type class object for creating an Output[Byte] from a Java Reader */
 object OutputStreamBuilder extends OutputBuilder[OutputStream, Byte] {
-  def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-    eh.except(new ByteOutput(s))
+  def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![Output[Byte], Exception] =
+    eh.wrap(new ByteOutput(s))
 }
 
   /*implicit val ProcIsReadable: StreamReader[Proc, Byte] = new StreamReader[Proc, Byte] {
-    def input(proc: Proc): ![Exception, Input[Byte]] =
+    def input(proc: Proc): ![Input[Byte], Exception] =
       except(InputStreamBuilder.input(proc.process.getInputStream))
   }*/
 
@@ -166,36 +166,36 @@ class LineInput(reader: Reader) extends Input[String] {
 
 /** Type class object for creating an Input[Char] from a Java Reader */
 object ReaderBuilder extends InputBuilder[Reader, Char] {
-  def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Exception, Input[Char]] =
-    eh.except(new CharInput(s))
+  def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Input[Char], Exception] =
+    eh.wrap(new CharInput(s))
 }
 
 /** Type class object for creating an Input[String] from a Java Reader */
 object LineReaderBuilder extends InputBuilder[Reader, String] {
-  def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Exception, Input[String]] =
-    eh.except(new LineInput(s))
+  def input(s: Reader)(implicit eh: ExceptionHandler): eh.![Input[String], Exception] =
+    eh.wrap(new LineInput(s))
 }
 
 /** Type class object for creating an Output[Char] from a Java Writer */
 object WriterBuilder extends OutputBuilder[Writer, Char] {
-  def output(s: Writer)(implicit eh: ExceptionHandler): eh.![Exception, Output[Char]] =
-    eh.except(new CharOutput(s))
+  def output(s: Writer)(implicit eh: ExceptionHandler): eh.![Output[Char], Exception] =
+    eh.wrap(new CharOutput(s))
 }
 
 class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
     StreamWriter[T, Byte] {
-  def output(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-    eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  def output(t: T)(implicit eh: ExceptionHandler): eh.![Output[Byte], Exception] =
+    eh.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
 }
 
 class JavaOutputStreamAppender[T](val getOutputStream: T => OutputStream) extends
     StreamAppender[T, Byte] {
-  def appendOutput(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Output[Byte]] =
-    eh.except(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  def appendOutput(t: T)(implicit eh: ExceptionHandler): eh.![Output[Byte], Exception] =
+    eh.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
 }
 
 class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
     StreamReader[T, Byte] {
-  def input(t: T)(implicit eh: ExceptionHandler): eh.![Exception, Input[Byte]] =
-    eh.except(new ByteInput(new BufferedInputStream(getInputStream(t))))
+  def input(t: T)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
+    eh.wrap(new ByteInput(new BufferedInputStream(getInputStream(t))))
 }
