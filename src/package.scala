@@ -159,7 +159,7 @@ package object io extends LowPriorityImplicits {
   implicit val simplePathsLinkable: Linkable[SimplePath, SimplePath] = SimplePathsLinkable
 
   implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
-  implicit val charAccumulator: AccumulatorBuilder[Char] = CharAccumulator
+  implicit val charAccumulator = CharAccumulator
 
   implicit val buildAppender: AppenderBuilder[Writer, Char] = AppenderBuilder
   implicit val stringCharReader: StreamReader[String, Char] = StringCharReader
