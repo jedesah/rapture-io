@@ -2,6 +2,8 @@
 Rapture I/O
 -----------
 
+Please note that Rapture I/O is currently in a state of flux as it being split into a number of smaller modules. The instructions below relate to the 0.8.1 release, and will not work with the current master.
+
 Version 0.8.1 for Scala 2.10.2
 
 **Rapture I/O** is a general purpose I/O library for Scala, providing much of the functionality of `java.io` and `java.net`, plus comprehensive support for working with JSON.
