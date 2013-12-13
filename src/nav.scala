@@ -51,7 +51,8 @@ class NavigableExtras[UrlType: Navigable](url: UrlType) {
   protected implicit val errorHandler = raw
   
   /** Return a list of children of this URL */
-  def children(implicit eh: ExceptionHandler) = implicitly[Navigable[UrlType]].children(url)
+  def children(implicit eh: ExceptionHandler) =
+    eh.wrap(implicitly[Navigable[UrlType]].children(url))
   
   /** Return true if this URL node is a directory (i.e. it can contain other URLs). */
   def isDirectory(implicit eh: ExceptionHandler): eh.![Boolean, Exception] =
