@@ -28,6 +28,15 @@ import language.higherKinds
 trait LowPriorityImplicits {
   import rapture.io._
   implicit val byteAccumulator: AccumulatorBuilder[Byte] = ByteAccumulator
+  
+  implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
+  
+  implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
+    new StreamReader[String, Byte] {
+      def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
+        eh.wrap(ByteArrayInput(s.getBytes(encoding.name)))
+    }
+
 }
 
 package object io extends LowPriorityImplicits {
@@ -36,12 +45,6 @@ package object io extends LowPriorityImplicits {
   
   private implicit val errorHandler = raw
   
-  implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
-    new StreamReader[String, Byte] {
-      def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
-        eh.wrap(ByteArrayInput(s.getBytes(encoding.name)))
-    }
-
   implicit def inputStreamReader[T, I[T] <: Input[T]]: StreamReader[I[T], T] =
     new StreamReader[I[T], T] {
       def input(in: I[T])(implicit eh: ExceptionHandler): eh.![Input[T], Exception] =
@@ -158,7 +161,6 @@ package object io extends LowPriorityImplicits {
 
   implicit val simplePathsLinkable: Linkable[SimplePath, SimplePath] = SimplePathsLinkable
 
-  implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
   implicit val charAccumulator = CharAccumulator
 
   implicit val buildAppender: AppenderBuilder[Writer, Char] = AppenderBuilder
