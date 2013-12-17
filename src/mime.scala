@@ -19,19 +19,16 @@
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
 package rapture.io
-import rapture.core._
-
-import scala.collection.mutable.HashMap
 
 /** Provides a typesafe list of MIME types, including mappings from common file extensions. This
   * list was produced from the public domain list of MIME types at
   * http://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types w*/
 object MimeTypes {
  
-  val exts = new HashMap[String, List[MimeType]]
-  val types = new HashMap[String, MimeType]
+  private var exts = Map[String, List[MimeType]]()
+  private var types = Map[String, MimeType]()
   
-  def fromString(mt: String) = types.get(mt)
+  def unapply(mt: String) = types.get(mt)
 
   /** Looks up the MIME type based on a file extension. */
   def extension(ext: String) = exts.get(ext).getOrElse(Nil)
@@ -40,8 +37,8 @@ object MimeTypes {
     * extensions which correspond to that type. */
   case class MimeType(name: String, extensions: String*) {
     override def toString = name
-    for(ext <- extensions) exts(ext) = this :: exts.get(ext).getOrElse(Nil)
-    types(name) = this
+    for(ext <- extensions) exts = exts.updated(ext, this :: exts.get(ext).getOrElse(Nil))
+    types = types.updated(name, this)
   }
 
   val `text/plain` = MimeType("text/plain", "asc", "conf", "def", "diff", "in", "list", "log",

@@ -25,8 +25,9 @@ import scala.collection.mutable.{HashMap, ListBuffer}
 
 case class Multipart(data: Array[Byte], headers: Map[String, String]) {
   def contentType: Option[MimeTypes.MimeType] =
-    headers.get("Content-Type") map { t =>
-      MimeTypes.fromString(t).getOrElse(MimeTypes.MimeType(t))
+    headers.get("Content-Type") map {
+      case MimeTypes(t) => t
+      case t => MimeTypes.MimeType(t)
     }
 
   lazy val contentDisposition: Option[(String, Map[String, String])] =

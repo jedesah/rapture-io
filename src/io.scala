@@ -22,17 +22,11 @@ package rapture.io
 
 import rapture.core._
 
-import language.higherKinds
-
-import scala.reflect.ClassTag
-import scala.concurrent._
-import scala.concurrent.duration._
-
 import java.io._
-import java.net._
 
-object JavaResources {
-  import language.reflectiveCalls
+import language.reflectiveCalls
+
+object javaResources {
   
   type StructuralReadable = { def getInputStream(): InputStream }
   type StructuralWritable = { def getOutputStream(): OutputStream }
@@ -43,11 +37,11 @@ object JavaResources {
   implicit val structuralWriter =
     new JavaOutputStreamWriter[StructuralWritable](_.getOutputStream())
 
-  implicit val javaFileReader = new JavaInputStreamReader[java.io.File](f =>
-      new java.io.FileInputStream(f))
+  implicit val javaFileReader = new JavaInputStreamReader[java.io.File](
+      new java.io.FileInputStream(_))
   
-  implicit val javaFileWriter = new JavaOutputStreamWriter[java.io.File](f =>
-      new java.io.FileOutputStream(f))
+  implicit val javaFileWriter = new JavaOutputStreamWriter[java.io.File](
+      new java.io.FileOutputStream(_))
   
   implicit val javaFileAppender = new JavaOutputStreamAppender[java.io.File](f =>
       new java.io.FileOutputStream(f, true))

@@ -19,6 +19,7 @@
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
 package rapture.io
+
 import rapture.core._
 
 import scala.reflect._
