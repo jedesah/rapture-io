@@ -6,7 +6,7 @@
 *                                                                                              *
 *   http://rapture.io/                                                                         *
 *                                                                                              *
-* Copyright 2010-2013 Propensive Ltd.                                                          *
+* Copyright 2010-2013 Jon Pretty, Propensive Ltd.                                              *
 *                                                                                              *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
 * except in compliance with the License. You may obtain a copy of the License at               *
@@ -18,7 +18,7 @@
 * either express or implied. See the License for the specific language governing permissions   *
 * and limitations under the License.                                                           *
 \**********************************************************************************************/
-package rapture
+package rapture.io
 
 import rapture.core._
 import java.util.zip._
@@ -26,20 +26,18 @@ import java.io._
 import language.higherKinds
 
 trait LowPriorityImplicits {
-  import rapture.io._
-  implicit val byteAccumulator: AccumulatorBuilder[Byte] = ByteAccumulator
+  implicit val byteAccumulator = ByteAccumulator
   
-  implicit val stringAccumulator: AccumulatorBuilder[String] = StringAccumulator
+  implicit val stringAccumulator = StringAccumulator
   
   implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
     new StreamReader[String, Byte] {
       def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
         eh.wrap(ByteArrayInput(s.getBytes(encoding.name)))
     }
-
 }
 
-package object io extends LowPriorityImplicits {
+object `package` extends LowPriorityImplicits {
   
   type Encoding = Encodings.Encoding
   
