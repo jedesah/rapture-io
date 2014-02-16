@@ -6,7 +6,7 @@
 *                                                                                              *
 *   http://rapture.io/                                                                         *
 *                                                                                              *
-* Copyright 2010-2013 Jon Pretty, Propensive Ltd.                                              *
+* Copyright 2010-2014 Jon Pretty, Propensive Ltd.                                              *
 *                                                                                              *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
 * except in compliance with the License. You may obtain a copy of the License at               *
@@ -146,8 +146,7 @@ object log {
         Zone(q(0)) -> readLevel(q(1))
       }).toMap
       log.listen(logger, level, zs)
-      try { in.slurp()(implicitly[AccumulatorBuilder[String]], implicitly[ExceptionHandler],
-          inputStreamReader[String, Input], implicitly[ClassTag[String]]) } catch {
+      try { in.slurp()(?, ?, inputStreamReader[String, Input], ?) } catch {
         case e: Exception => ()
       } finally log.unlisten(logger)
     }

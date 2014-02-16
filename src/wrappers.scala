@@ -6,7 +6,7 @@
 *                                                                                              *
 *   http://rapture.io/                                                                         *
 *                                                                                              *
-* Copyright 2010-2013 Jon Pretty, Propensive Ltd.                                              *
+* Copyright 2010-2014 Jon Pretty, Propensive Ltd.                                              *
 *                                                                                              *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
 * except in compliance with the License. You may obtain a copy of the License at               *
@@ -20,6 +20,7 @@
 \**********************************************************************************************/
 package rapture.io
 import rapture.core._
+import rapture.uri._
 
 import java.io._
 import java.net._
@@ -40,6 +41,9 @@ object OutputStreamBuilder extends OutputBuilder[OutputStream, Byte] {
     def input(proc: Proc): ![Input[Byte], Exception] =
       except(InputStreamBuilder.input(proc.process.getInputStream))
   }*/
+
+object ClasspathStreamByteReader extends JavaInputStreamReader[ClasspathUrl](url =>
+    getClass.getClassLoader.getResourceAsStream(url.pathString.substring(1)))
 
 /** Wraps a `java.io.Reader` as an `Input[Char]` */
 class CharInput(in: Reader) extends Input[Char] {

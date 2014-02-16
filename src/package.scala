@@ -6,7 +6,7 @@
 *                                                                                              *
 *   http://rapture.io/                                                                         *
 *                                                                                              *
-* Copyright 2010-2013 Jon Pretty, Propensive Ltd.                                              *
+* Copyright 2010-2014 Jon Pretty, Propensive Ltd.                                              *
 *                                                                                              *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
 * except in compliance with the License. You may obtain a copy of the License at               *
@@ -21,15 +21,18 @@
 package rapture.io
 
 import rapture.core._
+import rapture.uri._
 import java.util.zip._
 import java.io._
 import language.higherKinds
+
+import language.experimental.macros
 
 trait LowPriorityImplicits {
   implicit val byteAccumulator = ByteAccumulator
   
   implicit val stringAccumulator = StringAccumulator
-  
+
   implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
     new StreamReader[String, Byte] {
       def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
@@ -143,12 +146,6 @@ object `package` extends LowPriorityImplicits {
     def write(t: T) = ()
   }
 
-  /** Convenient empty string for terminating a path (which should end in a /). */
-  val `$`: String = ""
-
-  /** The canonical root for a simple path */
-  val `^`: SimplePath = new SimplePath(Nil, Map())
-
   type AfterPath = Map[Char, (String, Double)]
   
   implicit val buildInputStream: InputBuilder[InputStream, Byte] = InputStreamBuilder
@@ -156,8 +153,6 @@ object `package` extends LowPriorityImplicits {
   implicit val buildReader: InputBuilder[Reader, Char] = ReaderBuilder
   implicit val buildLineReader: InputBuilder[Reader, String] = LineReaderBuilder
   implicit val buildWriter: OutputBuilder[Writer, Char] = WriterBuilder
-
-  implicit val simplePathsLinkable: Linkable[SimplePath, SimplePath] = SimplePathsLinkable
 
   implicit val charAccumulator = CharAccumulator
 
@@ -180,7 +175,4 @@ object `package` extends LowPriorityImplicits {
   implicit def readable[Res](url: Res): Readable[Res] = new Readable[Res](url)
   implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
   
-  implicit def navigableExtras[Res: Navigable](url: Res): NavigableExtras[Res] =
-    new NavigableExtras(url)
-
 }

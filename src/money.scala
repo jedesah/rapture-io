@@ -6,7 +6,7 @@
 *                                                                                              *
 *   http://rapture.io/                                                                         *
 *                                                                                              *
-* Copyright 2010-2013 Jon Pretty, Propensive Ltd.                                              *
+* Copyright 2010-2014 Jon Pretty, Propensive Ltd.                                              *
 *                                                                                              *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file    *
 * except in compliance with the License. You may obtain a copy of the License at               *
@@ -67,18 +67,18 @@ object Finance {
 
   case class Money[T: Currency](major: Int, minor: Int) {
 
-    val div = math.pow(10, implicitly[Currency[T]].dp).toInt
+    val div = math.pow(10, ?[Currency[T]].dp).toInt
     val half = 0.5/div
 
     def this(amount: Double) =
-      this((amount*math.pow(10, implicitly[Currency[T]].dp).toInt + 0.5).toInt/math.pow(10,
-          implicitly[Currency[T]].dp).toInt, (amount*math.pow(10,
-          implicitly[Currency[T]].dp).toInt + 0.5).toInt%math.pow(10,
-          implicitly[Currency[T]].dp).toInt)
+      this((amount*math.pow(10, ?[Currency[T]].dp).toInt + 0.5).toInt/math.pow(10,
+          ?[Currency[T]].dp).toInt, (amount*math.pow(10,
+          ?[Currency[T]].dp).toInt + 0.5).toInt%math.pow(10,
+          ?[Currency[T]].dp).toInt)
 
-    def pad(x: Int) = ("0"*(implicitly[Currency[T]].dp - x.toString.length))+x
+    def pad(x: Int) = ("0"*(?[Currency[T]].dp - x.toString.length))+x
 
-    override def toString = implicitly[Currency[T]].prefix+amountString
+    override def toString = ?[Currency[T]].prefix+amountString
     def amountString =
       if(major < 0) "-"+(-major - 1)+"."+pad(div - minor) else major+"."+pad(minor)
 

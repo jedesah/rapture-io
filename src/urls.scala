@@ -51,6 +51,12 @@ abstract class Url[+UrlType <: Url[UrlType]](elements: Seq[String], afterPath: A
   override def +[P <: Path[P]](dest: P): Path[_] =
     if(dest.absolute) dest
     else pathRoot.makePath(0, dest.elements ++ thisPath.elements.drop(dest.ascent), afterPath)
+
+  override def hashCode = elements.hashCode ^ afterPath.hashCode
+  override def equals(any: Any) = any match {
+    case url: Url[_] => url.elements == elements && url.afterPath == afterPath
+    case _ => false
+  }
 }
 
 /** Defines a base to upon which the hierarchical part of the URL is appended */
