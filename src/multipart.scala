@@ -81,7 +81,6 @@ class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: 
     var boundmatch: Int = 0
 
     while(!finished) {
-      
       var cur = in.read()
       
       if(buf != null && dataStart == 0 && (buf(count%65536) == 10 && cur == 13 ||

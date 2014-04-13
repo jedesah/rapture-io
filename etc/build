@@ -1,4 +1,0 @@
-#!/bin/sh
-mkdir -p bin && \
-scalac -Xlint -feature -deprecation -d bin -cp ../mime/mime.jar:../uri/uri.jar:../core/core.jar src/*.scala && \
-jar cmf etc/manifest io.jar -C bin rapture

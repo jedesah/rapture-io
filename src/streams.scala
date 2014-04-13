@@ -312,7 +312,7 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
     count
   }
 
-  def transform[T](fn: Data => T): Input[T] = new Input[T] {
+  def map[T](fn: Data => T): Input[T] = new Input[T] {
     def read(): Option[T] = thisInput.read().map(fn)
     def ready(): Boolean = thisInput.ready()
     def close(): Unit = thisInput.close()
@@ -320,7 +320,7 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
 
   /** Maps elements of the input stream to zero, one or many elements, producing a new input
     * stream. */
-  def flatTransform[T](fn: Data => Seq[T]): Input[T] = new Input[T] {
+  def flatMap[T](fn: Data => Seq[T]): Input[T] = new Input[T] {
     private var buf: Seq[T] = Nil
     private var cur = 0
     private var avail = 0

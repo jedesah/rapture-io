@@ -1,62 +1,50 @@
 [![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=master)](https://travis-ci.org/propensive/rapture-io)
-Rapture I/O
------------
 
-Please note that Rapture I/O is currently in a state of flux as it being split into a number of smaller modules. The instructions below relate to the 0.8.1 release, and will not work with the current master.
+# Rapture IO
 
-Version 0.8.1 for Scala 2.10.2
+Rapture IO is a general purpose IO library for Scala, providing much of the functionality of java.io and java.net with an idiomatic Scala API.
 
-**Rapture I/O** is a general purpose I/O library for Scala, providing much of the functionality of `java.io` and `java.net`, plus comprehensive support for working with JSON.
+### Status
 
-See [rapture.io](http://rapture.io/) for more information, examples and documentation.
+Rapture IO is *managed*. This means that the API is expected to continue to evolve, but all API changes will be documented with instructions on how to upgrade.
 
-### Building Rapture I/O
+### Availability
 
-Rapture I/O has no dependencies (apart from Scala), and you can build it from source with just a few simple commands.
+Rapture IO 0.9.0 is available under the Apache 2.0 License from Maven Central with group ID `com.propensive` and artifact ID `rapture-io_2.10`.
 
-Using Scala 2.10.2 (or later), compile Rapture I/O as follows:
+#### SBT
 
-        git clone https://github.com/propensive/rapture-io.git
-        cd rapture-io
-        scalac -d bin src/*.scala
-        jar cf io.jar -C bin rapture
+You can include Rapture IO as a dependency in your own project by adding the following library dependency to your build file:
 
-Just include `io.jar` on your classpath to use Rapture I/O.
+```scala
+libraryDependencies ++= Seq("com.propensive" %% "rapture-io" % "0.9.0")
+```
 
-### Building Rapture I/O using Maven
+#### Maven
 
-Thanks to Michel Daviot, you can also use Maven to compile the project using:
+If you use Maven, include the following dependency:
 
-        git clone https://github.com/propensive/rapture-io.git
-        cd rapture-io
-        mvn clean scala:compile package
+```xml
+<dependency>
+  <groupId>com.propensive</groupId>
+  <artifactId>rapture-io_2.10</artifactId>
+  <version>0.9.0<version>
+</dependency>
+```
 
-To use Rapture I/O in your own projects, just include io.jar on your classpath and`import rapture.io._`.
+#### Download
 
-For most functionality, you will also need to specify a strategy for handling exceptions. Import one of the following return-type strategies:
+You can download Rapture IO directly from the [Rapture website](http://rapture.io/)
+Rapture IO depends on Scala 2.10 and Rapture Core, URI & MIME, but has no third-party dependencies.
 
-* `strategy.throwExceptions`
-* `strategy.captureExceptions`
-* `strategy.returnTry`
-* `strategy.returnFutures`
+#### Building from source
 
-Now, you're ready to go! Try this:
+To build Rapture URI from source, follow these steps:
 
-        $ scala -cp io.jar
-        Welcome to Scala version 2.10.2 (Java HotSpot(TM) 64-Bit Server VM, Java 1.6.0_24).
-        Type in expressions to have them evaluated.
-        Type :help for more information.
+```
+git clone git@github.com:propensive/rapture-io.git
+cd rapture-io
+sbt package
+```
 
-        scala> import rapture.io._
-        import rapture.io._
-
-        scala> import strategy.throwExceptions
-        throwExceptions
-
-        scala> json"""{ "foo": "Hello world!" }"""
-        res0: rapture.io.Json = 
-        {
-         "foo": "Hello world!"
-        }
-
-
+If the compilation is successful, the compiled JAR file should be found in target/scala-2.10
