@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=master)](https://travis-ci.org/propensive/rapture-io)
+[![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=scala-2.11)](https://travis-ci.org/propensive/rapture-io)
 
 # Rapture IO
 
@@ -10,7 +10,7 @@ Rapture IO is *managed*. This means that the API is expected to continue to evol
 
 ### Availability
 
-Rapture IO 0.9.0 is available under the Apache 2.0 License from Maven Central with group ID `com.propensive` and artifact ID `rapture-io_2.10`.
+Rapture IO 0.9.0 is available under the Apache 2.0 License from Maven Central with group ID `com.propensive` and artifact ID `rapture-io_2.11`.
 
 #### SBT
 
@@ -27,7 +27,7 @@ If you use Maven, include the following dependency:
 ```xml
 <dependency>
   <groupId>com.propensive</groupId>
-  <artifactId>rapture-io_2.10</artifactId>
+  <artifactId>rapture-io_2.11</artifactId>
   <version>0.9.0<version>
 </dependency>
 ```
@@ -35,7 +35,7 @@ If you use Maven, include the following dependency:
 #### Download
 
 You can download Rapture IO directly from the [Rapture website](http://rapture.io/)
-Rapture IO depends on Scala 2.10 and Rapture Core, URI & MIME, but has no third-party dependencies.
+Rapture IO depends on Scala 2.11 and Rapture Core, URI & MIME, but has no third-party dependencies.
 
 #### Building from source
 
@@ -47,4 +47,4 @@ cd rapture-io
 sbt package
 ```
 
-If the compilation is successful, the compiled JAR file should be found in target/scala-2.10
+If the compilation is successful, the compiled JAR file should be found in target/scala-2.11

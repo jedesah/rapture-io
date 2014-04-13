@@ -1,5 +1,5 @@
 object project extends ProjectSettings {
-  def scalaVersion = "2.10.4"
+  def scalaVersion = "2.11.0-RC4"
   def version = "0.9.0"
   def name = "io"
   def description = "Rapture IO is a general purpose IO library for Scala, providing much of the functionality of java.io and java.net with an idiomatic Scala API"
