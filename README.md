@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=master)](https://travis-ci.org/propensive/rapture-io)
+[![Build Status](https://travis-ci.org/propensive/rapture-io.png?branch=scala-2.10)](https://travis-ci.org/propensive/rapture-io)
 
 # Rapture IO
 
