@@ -1,0 +1,2 @@
+Version 0.10.0
+ - Renamed Encodings to encodings for consistency, and made all its members implicit
