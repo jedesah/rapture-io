@@ -166,11 +166,9 @@ object `package` extends LowPriorityImplicits {
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
       Result = Utils.ensuring[Result, Stream](create)(body)(close)
 
-  implicit def slurpable[Res](url: Res): Slurpable[Res] =
-    new Slurpable[Res](url)
+  implicit def slurpable[Res](url: Res): Slurpable[Res] = new Slurpable[Res](url)
   
-  implicit def appendable[Res](url: Res): Appendable[Res] =
-    new Appendable[Res](url)
+  implicit def appendable[Res](url: Res): Appendable[Res] = new Appendable[Res](url)
   
   implicit def readable[Res](url: Res): Readable[Res] = new Readable[Res](url)
   implicit def stringMethods(s: String): StringMethods = new StringMethods(s)

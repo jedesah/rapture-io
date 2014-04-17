@@ -187,7 +187,9 @@ class Writable[UrlType](url: UrlType) {
   *
   * @tparam Url Url for which this corresponds
   * @tparam Data Units of data to be streamed, typically `Byte` or `Char` */
-@implicitNotFound(msg = "Cannot write ${Data} data to ${UrlType} resources.")
+@implicitNotFound(msg = "Cannot write ${Data} data to ${UrlType} resources. Note that if you "+
+    "are working with Char data, you will require an implicit character encoding, e.g. "+
+    "implicit val enc = Encodings.`UTF-8`.")
 trait StreamWriter[-UrlType, @specialized(Byte, Char) Data] {
   def doNotClose = false
   def output(url: UrlType)(implicit eh: ExceptionHandler): eh.![Output[Data], Exception]
@@ -401,8 +403,10 @@ trait Output[@specialized(Byte, Char) Data] {
 
 /** Generic type class for reading a particular kind of data from 
   */
-@implicitNotFound(msg = "Cannot find implicit StreamReader for ${UrlType} resources. ${UrlType} "+
-    "resources can only be read if a StreamReader implicit exists within scope.")
+@implicitNotFound(msg = "Cannot find implicit StreamReader for ${UrlType} resources. "+
+    "${UrlType} resources can only be read if a StreamReader implicit exists within scope. "+
+    "Note that if you are working with Char data, you will require an implicit character "+
+    "encoding, e.g. implicit val enc = Encodings.`UTF-8`.")
 trait StreamReader[-UrlType, @specialized(Byte, Char) Data] {
   
   implicit private val errorHandler = raw
