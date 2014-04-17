@@ -42,8 +42,6 @@ trait LowPriorityImplicits {
 
 object `package` extends LowPriorityImplicits {
   
-  type Encoding = Encodings.Encoding
-  
   private implicit val errorHandler = raw
   
   implicit def inputStreamReader[T, I[T] <: Input[T]]: StreamReader[I[T], T] =
