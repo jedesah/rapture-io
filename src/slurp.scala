@@ -88,9 +88,9 @@ class Slurpable[UrlType](url: UrlType) {
     * @usecase def slurp[Byte](): Array[Byte]
     * @tparam Data The units of data being slurped
     * @return The accumulated data */
-  def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], eh: ExceptionHandler,
-      sr: StreamReader[UrlType, Data], mf: ClassTag[Data]): eh.![accumulatorBuilder.Out, Exception] =
-    eh.wrap {
+  def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], rts: Rts,
+      sr: StreamReader[UrlType, Data], mf: ClassTag[Data]): rts.Wrap[accumulatorBuilder.Out, Exception] =
+    rts.wrap {
       val c = accumulatorBuilder.make()
       url.handleInput[Data, Int](_ pumpTo c)
       c.buffer

@@ -35,8 +35,8 @@ trait LowPriorityImplicits {
 
   implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
     new StreamReader[String, Byte] {
-      def input(s: String)(implicit eh: ExceptionHandler): eh.![Input[Byte], Exception] =
-        eh.wrap(ByteArrayInput(s.getBytes(encoding.name)))
+      def input(s: String)(implicit rts: Rts): rts.Wrap[Input[Byte], Exception] =
+        rts.wrap(ByteArrayInput(s.getBytes(encoding.name)))
     }
 }
 
@@ -46,8 +46,8 @@ object `package` extends LowPriorityImplicits {
   
   implicit def inputStreamReader[T, I[T] <: Input[T]]: StreamReader[I[T], T] =
     new StreamReader[I[T], T] {
-      def input(in: I[T])(implicit eh: ExceptionHandler): eh.![Input[T], Exception] =
-        eh.wrap(in) 
+      def input(in: I[T])(implicit rts: Rts): rts.Wrap[Input[T], Exception] =
+        rts.wrap(in) 
     }
 
   /** Provides methods for URLs which can be written to as streams, most importantly for getting
@@ -57,41 +57,41 @@ object `package` extends LowPriorityImplicits {
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
-    def input(t: T)(implicit eh: ExceptionHandler): eh.![Input[String], Exception] =
-      eh.wrap(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
+    def input(t: T)(implicit rts: Rts): rts.Wrap[Input[String], Exception] =
+      rts.wrap(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): StreamWriter[T, String] = new StreamWriter[T, String] {
-    def output(t: T)(implicit eh: ExceptionHandler): eh.![Output[String], Exception] =
-      eh.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T)(implicit rts: Rts): rts.Wrap[Output[String], Exception] =
+      rts.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {
-    def input(t: T)(implicit eh: ExceptionHandler): eh.![Input[Char], Exception] =
-      eh.wrap(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
+    def input(t: T)(implicit rts: Rts): rts.Wrap[Input[Char], Exception] =
+      rts.wrap(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): StreamWriter[T, Char] = new StreamWriter[T, Char] {
-    def output(t: T)(implicit eh: ExceptionHandler): eh.![Output[Char], Exception] =
-      eh.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T)(implicit rts: Rts): rts.Wrap[Output[Char], Exception] =
+      rts.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream,
       String] =
     new InputBuilder[InputStream, String] {
-      def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Input[String], Exception] =
-        eh.wrap(new LineInput(new InputStreamReader(s, encoding.name)))
+      def input(s: InputStream)(implicit rts: Rts): rts.Wrap[Input[String], Exception] =
+        rts.wrap(new LineInput(new InputStreamReader(s, encoding.name)))
     }
 
   implicit def stringOutputBuilder(implicit encoding: Encoding):
       OutputBuilder[OutputStream, String] =
     new OutputBuilder[OutputStream, String] {
-      def output(s: OutputStream)(implicit eh: ExceptionHandler): eh.![
+      def output(s: OutputStream)(implicit rts: Rts): rts.Wrap[
           Output[String], Exception] =
-        eh.wrap(new LineOutput(new OutputStreamWriter(s, encoding.name)))
+        rts.wrap(new LineOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
   /** Views an `Input[Byte]` as a `java.io.InputStream` */
@@ -103,9 +103,9 @@ object `package` extends LowPriorityImplicits {
   implicit def outputStreamCharBuilder(implicit encoding: Encoding):
       OutputBuilder[OutputStream, Char] =
     new OutputBuilder[OutputStream, Char] {
-      def output(s: OutputStream)(implicit eh: ExceptionHandler):
-          eh.![Output[Char], Exception] =
-        eh.wrap(new CharOutput(new OutputStreamWriter(s, encoding.name)))
+      def output(s: OutputStream)(implicit rts: Rts):
+          rts.Wrap[Output[Char], Exception] =
+        rts.wrap(new CharOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
   /** Type class definition for creating an Input[Char] from a Java InputStream, taking an
@@ -113,29 +113,29 @@ object `package` extends LowPriorityImplicits {
   implicit def inputStreamCharBuilder(implicit encoding: Encoding):
       InputBuilder[InputStream, Char] =
     new InputBuilder[InputStream, Char] {
-      def input(s: InputStream)(implicit eh: ExceptionHandler): eh.![Input[Char], Exception] =
-        eh.wrap(new CharInput(new InputStreamReader(s, encoding.name)))
+      def input(s: InputStream)(implicit rts: Rts): rts.Wrap[Input[Char], Exception] =
+        rts.wrap(new CharInput(new InputStreamReader(s, encoding.name)))
     }
 
   implicit def stdoutWriter[Data]: StreamWriter[Stdout[Data], Data] =
       new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
-    def output(stdout: Stdout[Data])(implicit eh: ExceptionHandler):
-        eh.![Output[Data], Exception] = eh.wrap(stdout.output)
+    def output(stdout: Stdout[Data])(implicit rts: Rts):
+        rts.Wrap[Output[Data], Exception] = rts.wrap(stdout.output)
   }
 
   implicit def stderrWriter[Data]: StreamWriter[Stderr[Data], Data] =
     new StreamWriter[Stderr[Data], Data] {
       override def doNotClose = true
-      def output(stderr: Stderr[Data])(implicit eh: ExceptionHandler):
-          eh.![Output[Data], Exception] = eh.wrap[Output[Data], Exception](stderr.output)
+      def output(stderr: Stderr[Data])(implicit rts: Rts):
+          rts.Wrap[Output[Data], Exception] = rts.wrap[Output[Data], Exception](stderr.output)
   }
 
   implicit def stdin[Data]: StreamReader[Stdin[Data], Data] =
     new StreamReader[Stdin[Data], Data] {
       override def doNotClose = true
-      def input(stdin: Stdin[Data])(implicit eh: ExceptionHandler):
-          eh.![Input[Data], Exception] = eh.wrap[Input[Data], Exception](stdin.input)
+      def input(stdin: Stdin[Data])(implicit rts: Rts):
+          rts.Wrap[Input[Data], Exception] = rts.wrap[Input[Data], Exception](stdin.input)
     }
 
   def DevNull[T]: Output[T] = new Output[T] {
@@ -170,5 +170,9 @@ object `package` extends LowPriorityImplicits {
   
   implicit def readable[Res](url: Res): Readable[Res] = new Readable[Res](url)
   implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
-  
+
+  //implicit def copyable[FromType: Readable, ToType: Writable]: Copyable[FromType, ToType] = new Copyable[FromType, ToType] {
+  //  def copy(from: FromType, to: ToType) = ?[Readable].(from).input[Byte].pumpTo(?[Writable].(to).output[Byte])
+  //}
+
 }
