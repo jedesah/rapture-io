@@ -27,13 +27,13 @@ import java.net._
 
 /** Type class object for creating an Input[Byte] from a Java InputStream */
 object InputStreamBuilder extends InputBuilder[InputStream, Byte] {
-  def input(s: InputStream)(implicit rts: Rts): rts.Wrap[Input[Byte], Exception] =
+  def input(s: InputStream)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Byte], Exception] =
     rts.wrap(new ByteInput(s))
 }
 
 /** Type class object for creating an Output[Byte] from a Java Reader */
 object OutputStreamBuilder extends OutputBuilder[OutputStream, Byte] {
-  def output(s: OutputStream)(implicit rts: Rts): rts.Wrap[Output[Byte], Exception] =
+  def output(s: OutputStream)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[Byte], Exception] =
     rts.wrap(new ByteOutput(s))
 }
 
@@ -170,36 +170,36 @@ class LineInput(reader: Reader) extends Input[String] {
 
 /** Type class object for creating an Input[Char] from a Java Reader */
 object ReaderBuilder extends InputBuilder[Reader, Char] {
-  def input(s: Reader)(implicit rts: Rts): rts.Wrap[Input[Char], Exception] =
+  def input(s: Reader)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Char], Exception] =
     rts.wrap(new CharInput(s))
 }
 
 /** Type class object for creating an Input[String] from a Java Reader */
 object LineReaderBuilder extends InputBuilder[Reader, String] {
-  def input(s: Reader)(implicit rts: Rts): rts.Wrap[Input[String], Exception] =
+  def input(s: Reader)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[String], Exception] =
     rts.wrap(new LineInput(s))
 }
 
 /** Type class object for creating an Output[Char] from a Java Writer */
 object WriterBuilder extends OutputBuilder[Writer, Char] {
-  def output(s: Writer)(implicit rts: Rts): rts.Wrap[Output[Char], Exception] =
+  def output(s: Writer)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[Char], Exception] =
     rts.wrap(new CharOutput(s))
 }
 
 class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
     StreamWriter[T, Byte] {
-  def output(t: T)(implicit rts: Rts): rts.Wrap[Output[Byte], Exception] =
+  def output(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[Byte], Exception] =
     rts.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
 }
 
 class JavaOutputStreamAppender[T](val getOutputStream: T => OutputStream) extends
     StreamAppender[T, Byte] {
-  def appendOutput(t: T)(implicit rts: Rts): rts.Wrap[Output[Byte], Exception] =
+  def appendOutput(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[Byte], Exception] =
     rts.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
 }
 
 class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
     StreamReader[T, Byte] {
-  def input(t: T)(implicit rts: Rts): rts.Wrap[Input[Byte], Exception] =
+  def input(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Byte], Exception] =
     rts.wrap(new ByteInput(new BufferedInputStream(getInputStream(t))))
 }

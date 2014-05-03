@@ -26,7 +26,7 @@ trait Copyable[FromType, ToType] {
 }
 
 class CopyableExtras[FromType](from: FromType) {
-  def copyTo[ToType](to: ToType)(implicit rts: Rts,
+  def copyTo[ToType](to: ToType)(implicit rts: Rts[IoMethods],
       copyable: Copyable[FromType, ToType]): rts.Wrap[Long, Exception] =
     rts.wrap(?[Copyable[FromType, ToType]].copy(from, to))
 }

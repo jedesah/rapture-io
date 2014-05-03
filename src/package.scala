@@ -28,6 +28,8 @@ import language.higherKinds
 
 import language.experimental.macros
 
+trait IoMethods extends RtsGroup
+
 trait LowPriorityImplicits {
   implicit val byteAccumulator = ByteAccumulator
   
@@ -35,7 +37,7 @@ trait LowPriorityImplicits {
 
   implicit def stringByteReader(implicit encoding: Encoding): StreamReader[String, Byte] =
     new StreamReader[String, Byte] {
-      def input(s: String)(implicit rts: Rts): rts.Wrap[Input[Byte], Exception] =
+      def input(s: String)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Byte], Exception] =
         rts.wrap(ByteArrayInput(s.getBytes(encoding.name)))
     }
 }
@@ -46,7 +48,7 @@ object `package` extends LowPriorityImplicits {
   
   implicit def inputStreamReader[T, I[T] <: Input[T]]: StreamReader[I[T], T] =
     new StreamReader[I[T], T] {
-      def input(in: I[T])(implicit rts: Rts): rts.Wrap[Input[T], Exception] =
+      def input(in: I[T])(implicit rts: Rts[IoMethods]): rts.Wrap[Input[T], Exception] =
         rts.wrap(in) 
     }
 
@@ -57,39 +59,39 @@ object `package` extends LowPriorityImplicits {
 
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
-    def input(t: T)(implicit rts: Rts): rts.Wrap[Input[String], Exception] =
+    def input(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[String], Exception] =
       rts.wrap(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): StreamWriter[T, String] = new StreamWriter[T, String] {
-    def output(t: T)(implicit rts: Rts): rts.Wrap[Output[String], Exception] =
+    def output(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[String], Exception] =
       rts.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, Char] = new StreamReader[T, Char] {
-    def input(t: T)(implicit rts: Rts): rts.Wrap[Input[Char], Exception] =
+    def input(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Char], Exception] =
       rts.wrap(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): StreamWriter[T, Char] = new StreamWriter[T, Char] {
-    def output(t: T)(implicit rts: Rts): rts.Wrap[Output[Char], Exception] =
+    def output(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Output[Char], Exception] =
       rts.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream,
       String] =
     new InputBuilder[InputStream, String] {
-      def input(s: InputStream)(implicit rts: Rts): rts.Wrap[Input[String], Exception] =
+      def input(s: InputStream)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[String], Exception] =
         rts.wrap(new LineInput(new InputStreamReader(s, encoding.name)))
     }
 
   implicit def stringOutputBuilder(implicit encoding: Encoding):
       OutputBuilder[OutputStream, String] =
     new OutputBuilder[OutputStream, String] {
-      def output(s: OutputStream)(implicit rts: Rts): rts.Wrap[
+      def output(s: OutputStream)(implicit rts: Rts[IoMethods]): rts.Wrap[
           Output[String], Exception] =
         rts.wrap(new LineOutput(new OutputStreamWriter(s, encoding.name)))
     }
@@ -103,7 +105,7 @@ object `package` extends LowPriorityImplicits {
   implicit def outputStreamCharBuilder(implicit encoding: Encoding):
       OutputBuilder[OutputStream, Char] =
     new OutputBuilder[OutputStream, Char] {
-      def output(s: OutputStream)(implicit rts: Rts):
+      def output(s: OutputStream)(implicit rts: Rts[IoMethods]):
           rts.Wrap[Output[Char], Exception] =
         rts.wrap(new CharOutput(new OutputStreamWriter(s, encoding.name)))
     }
@@ -113,28 +115,28 @@ object `package` extends LowPriorityImplicits {
   implicit def inputStreamCharBuilder(implicit encoding: Encoding):
       InputBuilder[InputStream, Char] =
     new InputBuilder[InputStream, Char] {
-      def input(s: InputStream)(implicit rts: Rts): rts.Wrap[Input[Char], Exception] =
+      def input(s: InputStream)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[Char], Exception] =
         rts.wrap(new CharInput(new InputStreamReader(s, encoding.name)))
     }
 
   implicit def stdoutWriter[Data]: StreamWriter[Stdout[Data], Data] =
       new StreamWriter[Stdout[Data], Data] {
     override def doNotClose = true
-    def output(stdout: Stdout[Data])(implicit rts: Rts):
+    def output(stdout: Stdout[Data])(implicit rts: Rts[IoMethods]):
         rts.Wrap[Output[Data], Exception] = rts.wrap(stdout.output)
   }
 
   implicit def stderrWriter[Data]: StreamWriter[Stderr[Data], Data] =
     new StreamWriter[Stderr[Data], Data] {
       override def doNotClose = true
-      def output(stderr: Stderr[Data])(implicit rts: Rts):
+      def output(stderr: Stderr[Data])(implicit rts: Rts[IoMethods]):
           rts.Wrap[Output[Data], Exception] = rts.wrap[Output[Data], Exception](stderr.output)
   }
 
   implicit def stdin[Data]: StreamReader[Stdin[Data], Data] =
     new StreamReader[Stdin[Data], Data] {
       override def doNotClose = true
-      def input(stdin: Stdin[Data])(implicit rts: Rts):
+      def input(stdin: Stdin[Data])(implicit rts: Rts[IoMethods]):
           rts.Wrap[Input[Data], Exception] = rts.wrap[Input[Data], Exception](stdin.input)
     }
 
