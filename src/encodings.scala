@@ -63,26 +63,26 @@ object encodings {
   implicit lazy val system = lookup(System.getProperty("file.encoding"))
 
   private val allEncodings = Map(
-    "US-ASCII" -> `US-ASCII`,
-    "windows-1250" -> `windows-1250`,
-    "windows-1251" -> `windows-1251`,
-    "windows-1252" -> `windows-1252`,
-    "windows-1253" -> `windows-1253`,
-    "windows-1254" -> `windows-1254`,
-    "windows-1257" -> `windows-1257`,
-    "ISO-8859-1" -> `ISO-8859-1`,
-    "ISO-8859-2" -> `ISO-8859-2`,
-    "ISO-8859-4" -> `ISO-8859-4`,
-    "ISO-8859-5" -> `ISO-8859-5`,
-    "ISO-8859-7" -> `ISO-8859-7`,
-    "ISO-8859-9" -> `ISO-8859-9`,
-    "ISO-8859-13" -> `ISO-8859-13`,
-    "ISO-8859-15" -> `ISO-8859-15`,
-    "KOI8-R" -> `KOI8-R`,
-    "UTF-8" -> `UTF-8`,
-    "UTF-16" -> `UTF-16`,
-    "UTF-16BE" -> `UTF-16BE`,
-    "UTF-16LE " -> `UTF-16LE`
+    ("US-ASCII", `US-ASCII`),
+    ("windows-1250", `windows-1250`),
+    ("windows-1251", `windows-1251`),
+    ("windows-1252", `windows-1252`),
+    ("windows-1253", `windows-1253`),
+    ("windows-1254", `windows-1254`),
+    ("windows-1257", `windows-1257`),
+    ("ISO-8859-1", `ISO-8859-1`),
+    ("ISO-8859-2", `ISO-8859-2`),
+    ("ISO-8859-4", `ISO-8859-4`),
+    ("ISO-8859-5", `ISO-8859-5`),
+    ("ISO-8859-7", `ISO-8859-7`),
+    ("ISO-8859-9", `ISO-8859-9`),
+    ("ISO-8859-13", `ISO-8859-13`),
+    ("ISO-8859-15", `ISO-8859-15`),
+    ("KOI8-R", `KOI8-R`),
+    ("UTF-8", `UTF-8`),
+    ("UTF-16", `UTF-16`),
+    ("UTF-16BE", `UTF-16BE`),
+    ("UTF-16LE", `UTF-16LE`)
   )
  
   def lookup(enc: String): Encoding = allEncodings(enc)
