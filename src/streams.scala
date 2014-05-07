@@ -89,99 +89,102 @@ object AppenderBuilder extends AppenderBuilder[Writer, Char] {
 
 trait AppenderBuilder[OutputType, Data] { def appendOutput(s: OutputType): Output[Data] }
 
-//implicit def makeAppendable[UrlType](url: UrlType): Appendable[UrlType] =
-//  new Appendable(url)
+object Appendable {
+  class Capability[Res](res: Res) {
+    implicit protected val errorHandler = raw
 
-class Appendable[UrlType](url: UrlType) {
-  
-  implicit protected val errorHandler = raw
-
-  def appendOutput[Data](implicit sa: StreamAppender[UrlType, Data], rts: Rts[IoMethods]) =
-    sa.appendOutput(url)
-  
-  def handleAppend[Data, Result](body: Output[Data] => Result)(implicit sw:
-      StreamAppender[UrlType, Data]): Result = {
-    ensuring(appendOutput[Data])(body) { out =>
-      out.flush()
-      if(!sw.doNotClose) out.close()
+    def appendOutput[Data](implicit sa: StreamAppender[Res, Data], rts: Rts[IoMethods]) =
+      sa.appendOutput(res)
+    
+    def handleAppend[Data, Result](body: Output[Data] => Result)(implicit sw:
+        StreamAppender[Res, Data]): Result = {
+      ensuring(appendOutput[Data])(body) { out =>
+        out.flush()
+        if(!sw.doNotClose) out.close()
+      }
     }
+  }
+
+}
+
+object Readable {
+  class Capability[Res](res: Res) {
+
+    implicit private val errorHandler = raw
+
+    /** Gets the input for the resource specified in this resource */
+    def input[Data](implicit sr: StreamReader[Res, Data], rts: Rts[IoMethods]):
+      rts.Wrap[Input[Data], Exception] = rts.wrap(sr.input(res))
+   
+    /** Pumps the input for the specified resource to the destination resource provided */
+    def >[Data, DestRes](dest: DestRes)(implicit sr:
+        StreamReader[Res, Data], sw: StreamWriter[DestRes, Data], rts: Rts[IoMethods],
+        mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
+      rts.wrap(handleInput[Data, Int] { in =>
+        writable(dest).handleOutput[Data, Int](in pumpTo _)
+      })
+    
+    def |[Data, DestRes](dest: DestRes)(implicit sr:
+        StreamReader[Res, Data], sw: StreamWriter[DestRes, Data], mf: ClassTag[Data]):
+        DestRes = {
+          >(dest)
+          dest
+        }
+
+    def >>[Data, DestRes](dest: DestRes)(implicit sr:
+        StreamReader[Res, Data], sw: StreamAppender[DestRes, Data], rts: Rts[IoMethods],
+        mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
+      rts.wrap(handleInput[Data, Int] { in =>
+        dest.handleAppend[Data, Int](in pumpTo _)
+      })
+
+    /** Pumps the input for the specified resource to the destination output provided
+      *
+      * @tparam Data The type that the data should be pumped as
+      * @param out The destination for data to be pumped to */
+    def >[Data](out: Output[Data])(implicit sr: StreamReader[Res, Data],
+        rts: Rts[IoMethods], mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
+      rts.wrap(handleInput[Data, Int](_ pumpTo out))
+
+    /** Carefully handles writing to the input stream, ensuring that it is closed following
+      * data being written to the stream. Handling an input stream which is already being handled
+      * will have no effect.
+      *
+      * @tparam Data The type of data the stream should carry
+      * @tparam Result The type of body's result
+      * @param body The code to be executed upon the this Input before it is closed */
+    def handleInput[Data, Result](body: Input[Data] => Result)(implicit sr:
+        StreamReader[Res, Data]): Result =
+      ensuring(input[Data])(body) { in => if(!sr.doNotClose) in.close() }
   }
 }
 
-class Readable[UrlType](url: UrlType) {
-
-  implicit private val errorHandler = raw
-
-  /** Gets the input for the resource specified in this URL */
-  def input[Data](implicit sr: StreamReader[UrlType, Data], rts: Rts[IoMethods]):
-    rts.Wrap[Input[Data], Exception] = rts.wrap(sr.input(url))
- 
-  /** Pumps the input for the specified resource to the destination URL provided */
-  def >[Data, DestUrlType](dest: DestUrlType)(implicit sr:
-      StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], rts: Rts[IoMethods],
-      mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
-    rts.wrap(handleInput[Data, Int] { in =>
-      makeWritable(dest).handleOutput[Data, Int](in pumpTo _)
-    })
-  
-  def |[Data, DestUrlType](dest: DestUrlType)(implicit sr:
-      StreamReader[UrlType, Data], sw: StreamWriter[DestUrlType, Data], mf: ClassTag[Data]):
-      DestUrlType = {
-        >(dest)
-        dest
+object Writable {
+  class Capability[Res](res: Res) {
+    
+    implicit private val errorHandler = raw
+    
+    /** Gets the output stream directly
+      *
+      * @tparam Data The type of data to be carried by the `Output` */
+    def output[Data](implicit sw: StreamWriter[Res, Data], rts: Rts[IoMethods]):
+        rts.Wrap[Output[Data], Exception] = rts.wrap(sw.output(res))
+    
+    /** Carefully handles writing to the output stream, ensuring that it is closed following
+      * data being written.
+      *
+      * @param body The code to be executed upon this `Output` before being closed.
+      * @return The result from executing the body */
+    def handleOutput[Data, Result](body: Output[Data] => Result)(implicit sw:
+        StreamWriter[Res, Data]): Result =
+      ensuring(output[Data])(body) { out =>
+        out.flush()
+        if(!sw.doNotClose) out.close()
       }
-
-  def >>[Data, DestUrlType](dest: DestUrlType)(implicit sr:
-      StreamReader[UrlType, Data], sw: StreamAppender[DestUrlType, Data], rts: Rts[IoMethods],
-      mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
-    rts.wrap(handleInput[Data, Int] { in =>
-      dest.handleAppend[Data, Int](in pumpTo _)
-    })
-
-  /** Pumps the input for the specified resource to the destination output provided
-    *
-    * @tparam Data The type that the data should be pumped as
-    * @param out The destination for data to be pumped to */
-  def >[Data](out: Output[Data])(implicit sr: StreamReader[UrlType, Data],
-      rts: Rts[IoMethods], mf: ClassTag[Data]): rts.Wrap[Int, Exception] =
-    rts.wrap(handleInput[Data, Int](_ pumpTo out))
-
-  /** Carefully handles writing to the input stream, ensuring that it is closed following
-    * data being written to the stream. Handling an input stream which is already being handled
-    * will have no effect.
-    *
-    * @tparam Data The type of data the stream should carry
-    * @tparam Result The type of body's result
-    * @param body The code to be executed upon the this Input before it is closed */
-  def handleInput[Data, Result](body: Input[Data] => Result)(implicit sr:
-      StreamReader[UrlType, Data]): Result =
-    ensuring(input[Data])(body) { in => if(!sr.doNotClose) in.close() }
+  }
 }
 
-class Writable[UrlType](url: UrlType) {
-  
-  implicit private val errorHandler = raw
-  
-  /** Gets the output stream directly
-    *
-    * @tparam Data The type of data to be carried by the `Output` */
-  def output[Data](implicit sw: StreamWriter[UrlType, Data], rts: Rts[IoMethods]):
-      rts.Wrap[Output[Data], Exception] = rts.wrap(sw.output(url))
-  
-  /** Carefully handles writing to the output stream, ensuring that it is closed following
-    * data being written.
-    *
-    * @param body The code to be executed upon this `Output` before being closed.
-    * @return The result from executing the body */
-  def handleOutput[Data, Result](body: Output[Data] => Result)(implicit sw:
-      StreamWriter[UrlType, Data]): Result =
-    ensuring(output[Data])(body) { out =>
-      out.flush()
-      if(!sw.doNotClose) out.close()
-    }
-}
-
-/** Type trait for defining how a URL of type U should 
+/** Type trait for defining how a resource of type U should 
   *
   * @tparam Url Url for which this corresponds
   * @tparam Data Units of data to be streamed, typically `Byte` or `Char` */

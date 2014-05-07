@@ -80,19 +80,22 @@ class StringOutput extends {
   def buffer: String = sw.toString
 }
 
-class Slurpable[UrlType](url: UrlType) {
-  /** Reads in the entirety of the stream and accumulates it into an appropriate object
-    * depending on the availability of implicit Accumulator type class objects in scope.
-    *
-    * @usecase def slurp[Char](): String
-    * @usecase def slurp[Byte](): Array[Byte]
-    * @tparam Data The units of data being slurped
-    * @return The accumulated data */
-  def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], rts: Rts[IoMethods],
-      sr: StreamReader[UrlType, Data], mf: ClassTag[Data]): rts.Wrap[accumulatorBuilder.Out, Exception] =
-    rts.wrap {
-      val c = accumulatorBuilder.make()
-      url.handleInput[Data, Int](_ pumpTo c)
-      c.buffer
-    }
+object Slurpable {
+  class Capability[Res](res: Res) {
+    /** Reads in the entirety of the stream and accumulates it into an appropriate object
+      * depending on the availability of implicit Accumulator type class objects in scope.
+      *
+      * @usecase def slurp[Char](): String
+      * @usecase def slurp[Byte](): Array[Byte]
+      * @tparam Data The units of data being slurped
+      * @return The accumulated data */
+    def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], rts: Rts[IoMethods],
+        sr: StreamReader[Res, Data], mf: ClassTag[Data]): rts.Wrap[accumulatorBuilder.Out, Exception] =
+      rts.wrap {
+        val c = accumulatorBuilder.make()
+        res.handleInput[Data, Int](_ pumpTo c)
+        c.buffer
+      }
+  }
 }
+

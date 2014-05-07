@@ -21,31 +21,21 @@
 package rapture.io
 import rapture.core._
 
-object Copyable {
-  class Capability[FromType](from: FromType) {
-    def copyTo[ToType](to: ToType)(implicit rts: Rts[IoMethods],
-        copyable: Copyable[FromType, ToType]): rts.Wrap[Long, Exception] =
-      rts.wrap(?[Copyable[FromType, ToType]].copy(from, to))
+trait Deleter[Res] {
+  def delete(res: Res): Unit
+}
+
+object Deletable {
+  class Capability[Res](res: Res) {
+    def delete()(implicit rts: Rts[IoMethods],
+        deleter: Deleter[Res]): rts.Wrap[DeleteConfirmation, Exception] =
+      rts wrap {
+        deleter.delete(res)
+        DeleteConfirmation(1)
+      }
   }
 }
 
-trait Copyable[FromType, ToType] {
-  def copy(from: FromType, to: ToType): Long
+case class DeleteConfirmation(deleted: Int) {
+  override def toString = s"$deleted file(s) deleted"
 }
-
-
-object Sizable {
-  class Capability[UrlType: Sizable](url: UrlType) {
-    /** Returns the size in bytes of this URL */
-    def size(implicit rts: Rts[IoMethods]): rts.Wrap[Long, Exception] =
-      rts wrap ?[Sizable[UrlType]].size(url)
-  }
-}
-
-trait Sizable[Res] {
-  type ExceptionType <: Exception
-  /** Returns the size in bytes of the specified URL */
-  def size(res: Res): Long
-}
-
-

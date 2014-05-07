@@ -52,11 +52,6 @@ object `package` extends LowPriorityImplicits {
         rts.wrap(in) 
     }
 
-  /** Provides methods for URLs which can be written to as streams, most importantly for getting
-    * an `Output` */
-  implicit def makeWritable[Res](url: Res): Writable[Res] =
-    new Writable[Res](url)
-
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): StreamReader[T, String] = new StreamReader[T, String] {
     def input(t: T)(implicit rts: Rts[IoMethods]): rts.Wrap[Input[String], Exception] =
@@ -166,15 +161,16 @@ object `package` extends LowPriorityImplicits {
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
       Result = Utils.ensuring[Result, Stream](create)(body)(close)
 
-  implicit def slurpable[Res](url: Res): Slurpable[Res] = new Slurpable[Res](url)
   
-  implicit def appendable[Res](url: Res): Appendable[Res] = new Appendable[Res](url)
   
-  implicit def readable[Res](url: Res): Readable[Res] = new Readable[Res](url)
   implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
 
-  //implicit def copyable[FromType: Readable, ToType: Writable]: Copyable[FromType, ToType] = new Copyable[FromType, ToType] {
-  //  def copy(from: FromType, to: ToType) = ?[Readable].(from).input[Byte].pumpTo(?[Writable].(to).output[Byte])
-  //}
+  implicit def copyable[Res](res: Res): Copyable.Capability[Res] = new Copyable.Capability[Res](res)
+  implicit def appendable[Res](res: Res): Appendable.Capability[Res] = new Appendable.Capability[Res](res)
+  implicit def readable[Res](res: Res): Readable.Capability[Res] = new Readable.Capability[Res](res)
+  implicit def deletable[Res](res: Res): Deletable.Capability[Res] = new Deletable.Capability[Res](res)
+  implicit def slurpable[Res](res: Res): Slurpable.Capability[Res] = new Slurpable.Capability[Res](res)
+  implicit def writable[Res](res: Res): Writable.Capability[Res] = new Writable.Capability[Res](res)
 
+  
 }
