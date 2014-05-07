@@ -141,8 +141,6 @@ object `package` extends LowPriorityImplicits {
     def write(t: T) = ()
   }
 
-  type AfterPath = Map[Char, (String, Double)]
-  
   implicit val buildInputStream: InputBuilder[InputStream, Byte] = InputStreamBuilder
   implicit val buildOutputStream: OutputBuilder[OutputStream, Byte] = OutputStreamBuilder
   implicit val buildReader: InputBuilder[Reader, Char] = ReaderBuilder
@@ -171,6 +169,7 @@ object `package` extends LowPriorityImplicits {
   implicit def deletable[Res](res: Res): Deletable.Capability[Res] = new Deletable.Capability[Res](res)
   implicit def slurpable[Res](res: Res): Slurpable.Capability[Res] = new Slurpable.Capability[Res](res)
   implicit def writable[Res](res: Res): Writable.Capability[Res] = new Writable.Capability[Res](res)
-
+  implicit def movable[Res](res: Res): Movable.Capability[Res] = new Movable.Capability[Res](res)
+  implicit def sizable[Res](res: Res): Sizable.Capability[Res] = new Sizable.Capability[Res](res)
   
 }

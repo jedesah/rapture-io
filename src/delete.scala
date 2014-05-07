@@ -26,16 +26,17 @@ trait Deleter[Res] {
 }
 
 object Deletable {
+
+  case class Summary(deleted: Int) {
+    override def toString = s"$deleted file(s) deleted"
+  }
+
   class Capability[Res](res: Res) {
     def delete()(implicit rts: Rts[IoMethods],
-        deleter: Deleter[Res]): rts.Wrap[DeleteConfirmation, Exception] =
+        deleter: Deleter[Res]): rts.Wrap[Summary, Exception] =
       rts wrap {
         deleter.delete(res)
-        DeleteConfirmation(1)
+        Summary(1)
       }
   }
-}
-
-case class DeleteConfirmation(deleted: Int) {
-  override def toString = s"$deleted file(s) deleted"
 }
