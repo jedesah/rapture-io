@@ -22,7 +22,6 @@ package rapture.io
 import rapture.core._
 
 object Copyable {
-
   case class Summary(streamed: Option[Long]) {
     override def toString = streamed match {
       case None => "copied file"
@@ -42,7 +41,6 @@ trait Copyable[FromType, ToType] {
 }
 
 object Movable {
-
   case class Summary(streamed: Option[Long]) {
     override def toString = streamed match {
       case None => "moved file"
@@ -60,7 +58,6 @@ object Movable {
 trait Movable[FromType, ToType] {
   def move(from: FromType, to: ToType): Movable.Summary
 }
-
 
 object Sizable {
   class Capability[Res](res: Res) {
