@@ -89,9 +89,9 @@ object Slurpable {
       * @usecase def slurp[Byte](): Array[Byte]
       * @tparam Data The units of data being slurped
       * @return The accumulated data */
-    def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], rts: Rts[IoMethods],
-        sr: StreamReader[Res, Data], mf: ClassTag[Data]): rts.Wrap[accumulatorBuilder.Out, Exception] =
-      rts.wrap {
+    def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], mode: Mode[IoMethods],
+        sr: Reader[Res, Data], mf: ClassTag[Data]): mode.Wrap[accumulatorBuilder.Out, Exception] =
+      mode.wrap {
         val c = accumulatorBuilder.make()
         res.handleInput[Data, Int](_ pumpTo c)
         c.buffer

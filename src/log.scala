@@ -146,7 +146,7 @@ object log {
         Zone(q(0)) -> readLevel(q(1))
       }).toMap
       log.listen(logger, level, zs)
-      try { in.slurp()(?, ?, inputStreamReader[String, Input], ?) } catch {
+      try { in.slurp()(?, ?, inputReader[String, Input], ?) } catch {
         case e: Exception => ()
       } finally log.unlisten(logger)
     }

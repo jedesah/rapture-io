@@ -21,22 +21,21 @@
 package rapture.io
 import rapture.core._
 
-trait Deleter[Res] {
-  def delete(res: Res): Unit
+object Movable {
+  case class Summary(streamed: Option[Long]) {
+    override def toString = streamed match {
+      case None => "moved file"
+      case Some(b) => s"streamed, deleted $b bytes"
+    }
+  }
+
+  class Capability[FromType](from: FromType) {
+    def moveTo[ToType](to: ToType)(implicit mode: Mode[IoMethods],
+        movable: Movable[FromType, ToType]): mode.Wrap[Summary, Exception] =
+      mode.wrap(?[Movable[FromType, ToType]].move(from, to))
+  }
 }
 
-object Deletable {
-
-  case class Summary(deleted: Int) {
-    override def toString = s"$deleted file(s) deleted"
-  }
-
-  class Capability[Res](res: Res) {
-    def delete()(implicit mode: Mode[IoMethods],
-        deleter: Deleter[Res]): mode.Wrap[Summary, Exception] =
-      mode wrap {
-        deleter.delete(res)
-        Summary(1)
-      }
-  }
+trait Movable[FromType, ToType] {
+  def move(from: FromType, to: ToType): Movable.Summary
 }

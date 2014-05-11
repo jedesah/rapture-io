@@ -30,9 +30,9 @@ object Copyable {
   }
 
   class Capability[FromType](from: FromType) {
-    def copyTo[ToType](to: ToType)(implicit rts: Rts[IoMethods],
-        copyable: Copyable[FromType, ToType]): rts.Wrap[Summary, Exception] =
-      rts.wrap(?[Copyable[FromType, ToType]].copy(from, to))
+    def copyTo[ToType](to: ToType)(implicit mode: Mode[IoMethods],
+        copyable: Copyable[FromType, ToType]): mode.Wrap[Summary, Exception] =
+      mode.wrap(?[Copyable[FromType, ToType]].copy(from, to))
   }
 }
 

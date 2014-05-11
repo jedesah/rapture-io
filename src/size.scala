@@ -21,22 +21,18 @@
 package rapture.io
 import rapture.core._
 
-trait Deleter[Res] {
-  def delete(res: Res): Unit
-}
-
-object Deletable {
-
-  case class Summary(deleted: Int) {
-    override def toString = s"$deleted file(s) deleted"
-  }
-
+object Sizable {
   class Capability[Res](res: Res) {
-    def delete()(implicit mode: Mode[IoMethods],
-        deleter: Deleter[Res]): mode.Wrap[Summary, Exception] =
-      mode wrap {
-        deleter.delete(res)
-        Summary(1)
-      }
+    /** Returns the size in bytes of this resource */
+    def size(implicit mode: Mode[IoMethods], sizable: Sizable[Res]): mode.Wrap[Long, Exception] =
+      mode wrap sizable.size(res)
   }
 }
+
+trait Sizable[Res] {
+  type ExceptionType <: Exception
+  /** Returns the size in bytes of the specified resource */
+  def size(res: Res): Long
+}
+
+
