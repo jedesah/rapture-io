@@ -21,6 +21,7 @@
 package rapture.io
 
 import rapture.core._
+import rapture.codec._
 
 import scala.reflect._
 
@@ -44,8 +45,8 @@ trait AccumulatorBuilder[T] {
 /** Collects `Byte`s into an `Array[Byte]` */
 class ByteArrayOutput extends {
   private val baos = new ByteArrayOutputStream
-} with ByteOutput(baos) with Accumulator[Byte, Array[Byte]] {
-  def buffer: Array[Byte] = baos.toByteArray
+} with ByteOutput(baos) with Accumulator[Byte, Bytes] {
+  def buffer: Bytes = Bytes(baos.toByteArray)
 }
 
 /** Collects `String`s into another `String` */
@@ -57,7 +58,7 @@ class LinesOutput extends {
 
 /** Type class object for creating an accumulator Bytes into an `Array` of `Byte`s */
 object ByteAccumulator extends AccumulatorBuilder[Byte] {
-  type Out = Array[Byte]
+  type Out = Bytes
   def make() = new ByteArrayOutput
 }
 

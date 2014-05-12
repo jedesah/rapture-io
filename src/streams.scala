@@ -20,6 +20,7 @@
 \**********************************************************************************************/
 package rapture.io
 import rapture.core._
+import rapture.codec._
 import rapture.uri._
 import rapture.mime._
 
@@ -430,6 +431,12 @@ trait Reader[-UrlType, @specialized(Byte, Char) Data] {
 object StringCharReader extends Reader[String, Char] {
   def input(s: String)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Char], Exception] =
     mode.wrap(StringIsInput(s))
+}
+
+/** Type class object for reading `Byte`s from a `Array[Byte]` */
+object BytesReader extends Reader[Bytes, Byte] {
+  def input(s: Bytes)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte], Exception] =
+    mode.wrap(ByteArrayInput(s.bytes))
 }
 
 /** Type class object for reading `Byte`s from a `Array[Byte]` */

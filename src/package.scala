@@ -21,6 +21,7 @@
 package rapture.io
 
 import rapture.core._
+import rapture.codec._
 import rapture.uri._
 import java.util.zip._
 import java.io._
@@ -91,6 +92,9 @@ object `package` extends LowPriorityImplicits {
         mode.wrap(new LineOutput(new OutputStreamWriter(s, encoding.name)))
     }
 
+  implicit def resourceBytes[Res](res: Res)(implicit sr: Reader[Res, Byte]): Bytes =
+    slurpable(res).slurp[Byte]
+
   /** Views an `Input[Byte]` as a `java.io.InputStream` */
   implicit def inputStreamUnwrapper(is: Input[Byte]): InputStream =
     new InputStream { def read() = is.read().map(_.toInt).getOrElse(-1) }
@@ -152,6 +156,7 @@ object `package` extends LowPriorityImplicits {
   implicit val buildAppender: AppenderBuilder[java.io.Writer, Char] = AppenderBuilder
   implicit val stringCharReader: Reader[String, Char] = StringCharReader
   implicit val byteArrayReader: Reader[Array[Byte], Byte] = ByteArrayReader
+  implicit val bytesReader: Reader[Bytes, Byte] = BytesReader
 
   implicit val classpathStreamByteReader: JavaInputStreamReader[ClasspathUrl] =
     ClasspathStreamByteReader

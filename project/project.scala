@@ -6,6 +6,7 @@ object project extends ProjectSettings {
   
   def dependencies = Seq(
     "core" -> "0.10.0",
+    "codec" -> "0.10.0",
     "uri" -> "0.10.0",
     "mime" -> "0.10.0"
   )
