@@ -1,2 +1,3 @@
 Version 0.10.0
  - Renamed Encodings to encodings for consistency, and made all its members implicit
+ - Added a type parameter to `size` method, to specify units of size, e.g. size in Bytes or Chars

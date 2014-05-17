@@ -21,21 +21,32 @@
 package rapture.io
 import rapture.core._
 
-object Copyable {
-  case class Summary(streamed: Option[Long]) {
-    override def toString = streamed match {
-      case None => "copied file"
-      case Some(b) => s"streamed $b bytes"
+trait LowPriorityCopyable {
+  implicit def streamableCopyable[SrcType, DestType](implicit reader: Reader[SrcType, Byte],
+      writer: Writer[DestType, Byte]): Copyable[SrcType, DestType] =
+    new Copyable[SrcType, DestType] {
+      def copy(src: SrcType, dest: DestType): Copyable.Summary = {
+        val bytes = reader.input(src) > writer.output(dest)
+        Copyable.StreamSummary(bytes)
+      }
     }
+}
+
+object Copyable extends LowPriorityCopyable {
+
+  trait Summary
+
+  case class StreamSummary(bytes: Long) extends Summary {
+    override def toString = s"streamed $bytes bytes"
   }
 
-  class Capability[FromType](from: FromType) {
-    def copyTo[ToType](to: ToType)(implicit mode: Mode[IoMethods],
-        copyable: Copyable[FromType, ToType]): mode.Wrap[Summary, Exception] =
-      mode.wrap(?[Copyable[FromType, ToType]].copy(from, to))
+  class Capability[SrcType](from: SrcType) {
+    def copyTo[DestType](to: DestType)(implicit mode: Mode[IoMethods],
+        copyable: Copyable[SrcType, DestType]): mode.Wrap[Summary, Exception] =
+      mode.wrap(?[Copyable[SrcType, DestType]].copy(from, to))
   }
 }
 
-trait Copyable[FromType, ToType] {
-  def copy(from: FromType, to: ToType): Copyable.Summary
+trait Copyable[-SrcType, -DestType] {
+  def copy(from: SrcType, to: DestType): Copyable.Summary
 }

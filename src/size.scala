@@ -24,14 +24,14 @@ import rapture.core._
 object Sizable {
   class Capability[Res](res: Res) {
     /** Returns the size in bytes of this resource */
-    def size(implicit mode: Mode[IoMethods], sizable: Sizable[Res]): mode.Wrap[Long, Exception] =
+    def size[Data](implicit mode: Mode[IoMethods], sizable: Sizable[Res, Data]): mode.Wrap[Long, Exception] =
       mode wrap sizable.size(res)
   }
 }
 
-trait Sizable[Res] {
+trait Sizable[Res, Data] {
   type ExceptionType <: Exception
-  /** Returns the size in bytes of the specified resource */
+  /** Returns the number of units of the specified resource */
   def size(res: Res): Long
 }
 
