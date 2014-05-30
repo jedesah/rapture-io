@@ -33,9 +33,9 @@ import language.higherKinds
 object Utils {
 
   /** Safely closes a stream after processing */
-  def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit) = {
+  def ensuring[Result, Stream](create: Stream)(blk: Stream => Result)(close: Stream => Unit) = {
     val stream = create
-    val result = try { body(stream) } catch {
+    val result = try { blk(stream) } catch {
       case e: Throwable => try { close(stream) } catch { case e2: Exception => () }
       throw e
     }
@@ -45,26 +45,33 @@ object Utils {
   }
 }
 
-case class Stdout[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
-  def output(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception] =
-    mode.wrap(outputBuilder.output(System.out)(raw))
-}
-
-case class Stderr[Data](implicit outputBuilder: OutputBuilder[OutputStream, Data]) {
-  def output(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception] =
-    mode.wrap(outputBuilder.output(System.err)(raw))
-}
-
-case class Stdin[Data](implicit inputBuilder: InputBuilder[InputStream, Data]) {
-  def input(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Data], Exception] =
-    mode.wrap(inputBuilder.input(System.in)(raw))
-}
-
 /** Makes a `String` viewable as an `rapture.io.Input[Char]` */
 case class StringIsInput(string: String) extends CharInput(new StringReader(string))
 
 /** Makes an `Array[Byte]` viewable as an `Input[Byte]` */
 case class ByteArrayInput(array: Array[Byte]) extends ByteInput(new ByteArrayInputStream(array))
+
+object InputBuilder {
+  implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream,
+      String] =
+    new InputBuilder[InputStream, String] {
+      def input(s: InputStream)(implicit mode: Mode[IoMethods]):
+          mode.Wrap[Input[String], Exception] =
+        mode.wrap(new LineInput(new InputStreamReader(s, encoding.name)))
+    }
+  /** Type class definition for creating an Input[Char] from a Java InputStream, taking an
+    * [[Encoding]] implicitly for converting between `Byte`s and `Char`s */
+  implicit def inputStreamCharBuilder(implicit encoding: Encoding):
+      InputBuilder[InputStream, Char] =
+    new InputBuilder[InputStream, Char] {
+      def input(s: InputStream)(implicit mode: Mode[IoMethods]):
+          mode.Wrap[Input[Char], Exception] =
+        mode.wrap(new CharInput(new InputStreamReader(s, encoding.name)))
+    }
+  implicit val buildInputStream: InputBuilder[InputStream, Byte] = InputStreamBuilder
+  implicit val buildReader: InputBuilder[java.io.Reader, Char] = ReaderBuilder
+  implicit val buildLineReader: InputBuilder[java.io.Reader, String] = LineReaderBuilder
+}
 
 /** Type trait for building a new `Input` from particular kind of input stream
   *
@@ -73,6 +80,30 @@ case class ByteArrayInput(array: Array[Byte]) extends ByteInput(new ByteArrayInp
   * @tparam Data The type of data that the `Input` carries */
 trait InputBuilder[InputType, Data] {
   def input(s: InputType)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Data], Exception]
+}
+
+object OutputBuilder {
+  implicit val buildOutputStream: OutputBuilder[OutputStream, Byte] = OutputStreamBuilder
+  implicit val buildWriter: OutputBuilder[java.io.Writer, Char] = WriterBuilder
+
+  implicit def stringOutputBuilder(implicit encoding: Encoding):
+      OutputBuilder[OutputStream, String] =
+    new OutputBuilder[OutputStream, String] {
+      def output(s: OutputStream)(implicit mode: Mode[IoMethods]): mode.Wrap[
+          Output[String], Exception] =
+        mode.wrap(new LineOutput(new OutputStreamWriter(s, encoding.name)))
+    }
+  /** Type class definition for creating an Output[Char] from a Java OutputStream, taking an
+    * [[Encoding]] implicitly for converting between `Byte`s and `Char`s */
+  implicit def outputStreamCharBuilder(implicit encoding: Encoding):
+      OutputBuilder[OutputStream, Char] =
+    new OutputBuilder[OutputStream, Char] {
+      def output(s: OutputStream)(implicit mode: Mode[IoMethods]):
+          mode.Wrap[Output[Char], Exception] =
+        mode.wrap(new CharOutput(new OutputStreamWriter(s, encoding.name)))
+    }
+
+
 }
 
 /** Type trait for building a new `Output[Data]` from particular kind of output stream
@@ -84,8 +115,11 @@ trait OutputBuilder[OutputType, Data] {
   def output(s: OutputType)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception]
 }
 
-object AppenderBuilder extends AppenderBuilder[java.io.Writer, Char] {
-  def appendOutput(s: java.io.Writer) = new CharOutput(s)
+object AppenderBuilder {
+  implicit def buildAppender: AppenderBuilder[java.io.Writer, Char] =
+    new AppenderBuilder[java.io.Writer, Char] {
+      def appendOutput(s: java.io.Writer) = new CharOutput(s)
+    }
 }
 
 trait AppenderBuilder[OutputType, Data] { def appendOutput(s: OutputType): Output[Data] }
@@ -148,8 +182,8 @@ object Readable {
       mode.wrap(handleInput[Data, Int](_ pumpTo out))
 
     /** Carefully handles writing to the input stream, ensuring that it is closed following
-      * data being written to the stream. Handling an input stream which is already being handled
-      * will have no effect.
+      * data being written to the stream. Handling an input stream which is already being
+      * handled will have no effect.
       *
       * @tparam Data The type of data the stream should carry
       * @tparam Result The type of body's result
@@ -185,6 +219,20 @@ object Writable {
   }
 }
 
+object Writer {
+  implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
+      encoding: Encoding): Writer[T, String] = new Writer[T, String] {
+    def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[String], Exception] =
+      mode.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+
+  implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
+      encoding: Encoding): Writer[T, Char] = new Writer[T, Char] {
+    def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
+      mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+}
+
 /** Type trait for defining how a resource of type U should 
   *
   * @tparam Url Url for which this corresponds
@@ -199,7 +247,8 @@ trait Writer[-UrlType, @specialized(Byte, Char) Data] {
 
 trait Appender[-UrlType, Data] {
   def doNotClose = false
-  def appendOutput(url: UrlType)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception]
+  def appendOutput(url: UrlType)(implicit mode: Mode[IoMethods]):
+      mode.Wrap[Output[Data], Exception]
 }
 
 /*  Extract the encoding from an HTTP stream */
@@ -257,12 +306,12 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
   def ready(): Boolean
 
   /** Reads a single item of data from the input stream.  Note that each call to this method
-    * will result in a new instance of `Some` to be constructed, so for reading larger block, use
-    * the `readBlock` method which may be implemented more efficiently. */
+    * will result in a new instance of `Some` to be constructed, so for reading larger block,
+    * use the `readBlock` method which may be implemented more efficiently. */
   def read(): Option[Data]
  
-  /** Default implementation for reading a block of data from the input stream into the specified
-    * array.
+  /** Default implementation for reading a block of data from the input stream into the
+    * specified array.
     *
     * The basic implementation is provided for convenience, though it is not an efficient
     * implementation and results in large numbers of boxing objects being created unnecessarily.
@@ -401,6 +450,42 @@ trait Output[@specialized(Byte, Char) Data] {
 
   /** Closes the stream */
   def close(): Unit
+}
+
+trait LowPriorityReader {
+  implicit def stringByteReader(implicit encoding: Encoding): Reader[String, Byte] =
+    new Reader[String, Byte] {
+      def input(s: String)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte], Exception] =
+        mode.wrap(ByteArrayInput(s.getBytes(encoding.name)))
+    }
+}
+
+object Reader extends LowPriorityReader {
+  implicit def inputStreamReader[T, I[T] <: Input[T]]: Reader[I[T], T] =
+    new Reader[I[T], T] {
+      def input(in: I[T])(implicit mode: Mode[IoMethods]): mode.Wrap[Input[T], Exception] =
+        mode.wrap(in)
+    }
+
+  implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
+      encoding: Encoding): Reader[T, String] = new Reader[T, String] {
+    def input(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[String], Exception] =
+      mode.wrap(new LineInput(new InputStreamReader(jisr.getInputStream(t))))
+  }
+
+  implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T],
+      encoding: Encoding): Reader[T, Char] = new Reader[T, Char] {
+    def input(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Char], Exception] =
+      mode.wrap(new CharInput(new InputStreamReader(jisr.getInputStream(t))))
+  }
+
+  implicit def resourceBytes[Res](res: Res)(implicit sr: Reader[Res, Byte]): Bytes =
+    slurpable(res).slurp[Byte]
+
+  implicit val stringCharReader: Reader[String, Char] = StringCharReader
+  implicit val byteArrayReader: Reader[Array[Byte], Byte] = ByteArrayReader
+  implicit val bytesReader: Reader[Bytes, Byte] = BytesReader
+
 }
 
 /** Generic type class for reading a particular kind of data from 
