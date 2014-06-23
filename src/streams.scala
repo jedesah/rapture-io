@@ -231,6 +231,19 @@ object Writer {
     def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
       mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
+  implicit val stdoutWriter: Writer[Stdout.type, Byte] = new Writer[Stdout.type, Byte] {
+    override def doNotClose = true
+    def output(stdout: Stdout.type)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Output[Byte], Exception] =
+      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
+  }
+  
+  implicit val stderrWriter: Writer[Stderr.type, Byte] = new Writer[Stderr.type, Byte] {
+    override def doNotClose = true
+    def output(stderr: Stderr.type)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Output[Byte], Exception] =
+      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
+  }
 }
 
 /** Type trait for defining how a resource of type U should 
@@ -486,6 +499,12 @@ object Reader extends LowPriorityReader {
   implicit val byteArrayReader: Reader[Array[Byte], Byte] = ByteArrayReader
   implicit val bytesReader: Reader[Bytes, Byte] = BytesReader
 
+  implicit val stdinReader: Reader[Stdin.type, Byte] = new Reader[Stdin.type, Byte] {
+    def input(stdin: Stdin.type)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Input[Byte], Exception] =
+      mode.wrap { implicitly[InputBuilder[InputStream, Byte]].input(System.in)(raw) }
+  }
+  
 }
 
 /** Generic type class for reading a particular kind of data from 
@@ -529,3 +548,7 @@ object ByteArrayReader extends Reader[Array[Byte], Byte] {
   def input(s: Array[Byte])(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte], Exception] =
     mode.wrap(ByteArrayInput(s))
 }
+
+object Stdin
+object Stdout
+object Stderr
