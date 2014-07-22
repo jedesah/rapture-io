@@ -328,7 +328,7 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
     *
     * The basic implementation is provided for convenience, though it is not an efficient
     * implementation and results in large numbers of boxing objects being created unnecessarily.
-    * Subclasses of Input should provide their own implementations of writeBlock.
+    * Subclasses of Input should provide their own implementations of readBlock.
     *
     * @param array The array into which content should be read
     * @param offset The offset to the position within the array that data should start to be

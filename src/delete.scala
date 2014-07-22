@@ -33,10 +33,9 @@ object Deletable {
 
   class Capability[Res](res: Res) {
     def delete()(implicit mode: Mode[IoMethods],
-        deleter: Deleter[Res]): mode.Wrap[Summary, Exception] =
-      mode wrap {
-        deleter.delete(res)
-        Summary(1)
-      }
+        deleter: Deleter[Res]): mode.Wrap[Summary, Exception] = mode wrap {
+      deleter.delete(res)
+      Summary(1)
+    }
   }
 }
