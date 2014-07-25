@@ -7,7 +7,7 @@ file or an HTTP URL) from its capabilities (such as the ability to be read of ha
 checked). This means that any resource can have any capability, provided there is an
 implementation for that combination of resource and capability. These capabilities are all
 presented through simple and consistent method invocations on resources, so in normal usage
-it works just as you would expect.
+it works just as you would hope.
 
 
 ### Resources
@@ -26,11 +26,11 @@ the location of the data which makes up the state of the underlying resource.
 
 It's important to be aware that despite many of the operations performed on resources by
 Rapture intrinsically result in modification to the underlying resource data, the JVM heap
-objects representing those resources do not change; you can have an object representing a
-resource called `file:///x/y` which you rename to `file:///x/z`, and the filesystem will
-modify some blocks on the physical disk so that the data which was previously at
-`file:///x/y` is now at `file:///x/z`, but the original object will still refer to
-`file:///x/y`, even though there is now no data at that location.
+objects representing those resources typically do not change; you can have an object
+representing a resource called `file:///x/y` which you rename to `file:///x/z`, and the
+filesystem will modify some blocks on the physical disk so that the data which was
+previously at `file:///x/y` is now at `file:///x/z`, but the original object will still
+refer to `file:///x/y`, even though there is now no data at that location.
 
 Likewise, while the JVM heap objects representing resources are immutable, there are no
 guarantees that the data they refer to exists, or maintains any consistent state over the
@@ -56,16 +56,16 @@ defined. From a usage point of view, you rarely if ever need to be aware of this
 IO provides implicits which will be resolved by Scala at compile time to ensure that you can
 only use capabilities on resources which support them.
 
-Here are some of the capabilities which Rapture IO provides for resources which support
-them:
+Here are some of the capabilities which Rapture IO provides for those resources which
+support them:
 
 
 #### Slurping
 
-Some resources can be slurped into memory, usually in the form of a string or a byte array.
-Whilst reading an entire resource into memory may be undesirable for large resources -- we
-would prefer streaming solutions, if possible -- it remains a convenient way of working with
-small amounts of data.
+Some resources can be "slurped" into memory, usually in the form of a string or a byte
+array.  Whilst reading an entire resource into memory may be undesirable for large resources
+-- we would prefer streaming solutions, if possible -- it remains a convenient way of
+working with small amounts of data.
 
 Slurping resources is provided by the `slurp` method, which takes a single type parameter,
 representing the units of data being streamed, typically `Byte` or `Char`. Depending on this
@@ -82,7 +82,21 @@ Many resources, such as filesystem files, are organised into a tree hierarchy, w
 are called "files" and nodes are "directories". We call resources such as these *navigable*,
 and make available the methods `children`, which returns a `Seq` of child resources
 immediately beneath it in the hierarchy, and `isDirectory` which returns true only if the
-resource is capable of having children.
+resource is capable of having children (though it may not actually have any).
+
+```
+val dir: FileUrl = uri"file:///home/work/dev"
+val files: Seq[FileUrl] = dir.children
+```
+
+When calling `children`, the types of the child elements will be the same as that of the
+parent resource.
+
+Additionally, it can be useful to iterate over not just the immediate children of a
+directory, but all its descendants. The method `descendants` returns an `Iterator` which
+provides a pre-order traversal of the directory structure. As the descendants may be
+very numerous, the collection returned is an `Iterator`, rather than a strictly-evaluated
+collection like `List`.
 
 
 #### Sizing
