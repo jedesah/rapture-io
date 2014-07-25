@@ -21,11 +21,29 @@
 package rapture.io
 import rapture.core._
 
+import scala.reflect._
+
 object Sizable {
   class Capability[Res](res: Res) {
     /** Returns the size in bytes of this resource */
     def size[Data](implicit mode: Mode[IoMethods], sizable: Sizable[Res, Data]): mode.Wrap[Long, Exception] =
       mode wrap sizable.size(res)
+  }
+
+  implicit def charSizable[Res, Data: ClassTag](implicit reader: Reader[Res, Data]): Sizable[Res, Data] = new Sizable[Res, Data] {
+    private def accumulator() = new Accumulator[Data, Long] with Output[Data] {
+      private var count = 0
+      def buffer: Long = count
+      def write(b: Data) = count += 1
+      def flush(): Unit = ()
+      def close(): Unit = ()
+    }
+
+    def size(res: Res): Long = {
+      val acc = accumulator()
+      res.handleInput[Data, Int](_ pumpTo acc)
+      acc.buffer
+    }
   }
 }
 
