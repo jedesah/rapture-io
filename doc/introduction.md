@@ -95,8 +95,8 @@ parent resource.
 Additionally, it can be useful to iterate over not just the immediate children of a
 directory, but all its descendants. The method `descendants` returns an `Iterator` which
 provides a pre-order traversal of the directory structure. As the descendants may be
-very numerous, the collection returned is an `Iterator`, rather than a strictly-evaluated
-collection like `List`.
+very numerous, the collection returned is a lazily-evaluated `Iterator`, rather than a
+strictly-evaluated collection like `List`.
 
 
 #### Sizing
@@ -106,7 +106,22 @@ this will return the size of the resource in bytes, however if you want to calcu
 size in characters (if it uses a multi-byte encoding) or lines, you can specify an optional
 type parameter of `Char` or `String` respectively.
 
-To work with characters or strings, an implicit `Encoding` is required.
+```
+scala> val bytes = file.size()
+bytes: Long = 4927
+
+scala> val chars = file.size[Char]()
+chars: Long = 4919
+
+scala> val lines = file.size[String]()
+lines: Long = 74
+```
+
+To work with characters or strings, an implicit `Encoding` is required. By default, any
+resource which is *readable* can have its size checked, though the complexity of this
+operation is typically linear in the size of the resource, as the operation involves
+streaming the entire resource. Some resources, like files, can know their size in bytes in
+constant time, so where possible, this is preferred.
 
 
 #### Writing and Appending
@@ -135,9 +150,22 @@ method will be preferred over streaming.
 #### Deleting
 
 Some resources, such as files on the local filesystem or on an FTP server, may be deletable.
-Resources which may be deleted may have a `delete` method called on them.
+Resources which may be deleted may have a `delete()` method called on them.
+
+```
+val file = uri"file:///home/work/garbage"
+file.delete()
+```
+
 
 #### Moving and renaming
+
+To be completed.
+
+
+#### Linking
+
+To be completed.
 
 
 ### Working with Character Encodings
@@ -199,6 +227,7 @@ so you can think of the scheme objects as "empty" paths, from which new paths ar
 The scheme objects also all provide a `parse` method, which takes a String at runtime, and
 attempts to parse it into a valid instance of the corresponding URL type. This is the method
 you would typically use when very little is known about the URL until runtime.
+
 
 #### Using a string-context literal
 
@@ -284,6 +313,13 @@ trait Output[Data] {
 }
 ```
 
+### Processes as Resources
+
+To be completed.
+
+
 ### IP Addresses
 
 Rapture IO provides representations of IPv4 and IPv6 addresses.
+
+To be completed.
