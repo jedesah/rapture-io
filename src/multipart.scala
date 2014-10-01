@@ -1,6 +1,6 @@
 /**********************************************************************************************\
 * Rapture I/O Library                                                                          *
-* Version 0.9.0                                                                                *
+* Version 0.10.0                                                                               *
 *                                                                                              *
 * The primary distribution site is                                                             *
 *                                                                                              *
