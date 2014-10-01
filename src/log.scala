@@ -23,6 +23,7 @@ import rapture.core._
 
 import scala.annotation.elidable
 import scala.reflect._
+import scala.collection.mutable._
 
 /** Basic logging functionality, introducing the concept of logging zones. Note that this is
   * almost certainly not as efficient as it ought to be, so use something else if efficiency
@@ -48,7 +49,7 @@ object log {
 
   implicit val zone = Zone("logger")
   
-  var listeners: List[(Logger, Level, Map[Zone, Level])] = Nil
+  val listeners: HashSet[(Logger, Level, Map[Zone, Level])] = new HashSet()
 
   val df = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
   var dateString = ""
@@ -56,11 +57,11 @@ object log {
 
   def listen(logger: Logger, level: Level = Info, spec: Map[Zone, Level] = Map()): Unit = {
     info("Registering listener")
-    listeners = (logger, level, spec) :: listeners
+    listeners += ((logger, level, spec))
   }
 
-  def unlisten(logger: Logger) = {
-    listeners = listeners.filter(_._1 != logger)
+  def unlisten(logger: Logger) = synchronized {
+    listeners.find(_._1 == logger) foreach (listeners -= _)
   }
 
   @inline
@@ -117,38 +118,3 @@ object log {
     }
   }
 }
-
-/*class TcpLogServer(port: Int) {
-
-  implicit val enc = Encodings.`UTF-8`
-
-  private def readLevel(s: String) = s match {
-    case "debug" => Debug
-    case "info" => Info
-    case "warn" => Warn
-    case "error" => Error
-    case "fatal" => Fatal
-    case _ => Trace
-  }
-
-  def await(): Unit = {
-    tcpHandle[String](port) { case (in, out) =>
-      val logger = new Logger {
-        def log(msg: String, level: Level, zone: Zone) = {
-          out.write(level.level+msg)
-          out.flush()
-        }
-      }
-      val spec = in.read().get
-      val level = readLevel(spec.split("&")(0))
-      val zs = (spec.split("&").tail map { x =>
-        val q = x.split("=")
-        Zone(q(0)) -> readLevel(q(1))
-      }).toMap
-      log.listen(logger, level, zs)
-      try { in.slurp()(?, ?, inputStreamReader[String, Input], ?) } catch {
-        case e: Exception => ()
-      } finally log.unlisten(logger)
-    }
-  }
-}*/
