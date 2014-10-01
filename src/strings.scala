@@ -21,13 +21,14 @@
 package rapture.io
 
 import rapture.core._
+import rapture.codec._
 import rapture.uri._
 import java.net._
 
 class StringMethods(s: String) {
-  @inline def urlEncode(implicit encoding: Encoding = Encodings.`UTF-8`) =
+  @inline def urlEncode(implicit encoding: Encoding = encodings.`UTF-8`) =
     URLEncoder.encode(s, encoding.name)
-  @inline def urlDecode(implicit encoding: Encoding = Encodings.`UTF-8`) =
+  @inline def urlDecode(implicit encoding: Encoding = encodings.`UTF-8`) =
     URLDecoder.decode(s, encoding.name)
 
   def /(s2: String) = new RelativePath(0, Array(s, s2), Map())
