@@ -102,6 +102,7 @@ object Slurpable {
       mode.wrap {
         val c = accumulatorBuilder.make()
         res.handleInput[Data, Int](_ pumpTo c)
+        c.close()
         c.buffer
       }
   }
