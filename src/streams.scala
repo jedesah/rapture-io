@@ -222,30 +222,23 @@ object Writable {
 object Writer {
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, String] = new Writer[T, String] {
+    override def doNotClose = jisw.doNotClose
     def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[String], Exception] =
       mode.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, Char] = new Writer[T, Char] {
+    override def doNotClose = jisw.doNotClose
     def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
       mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
-  implicit val stdoutWriter: Writer[Stdout.type, Byte] = new Writer[Stdout.type, Byte] {
-    override def doNotClose = true
-    def output(stdout: Stdout.type)(implicit mode: Mode[IoMethods]):
-        mode.Wrap[Output[Byte], Exception] =
-      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
-  }
   
-  implicit val stdoutAppender: Appender[Stdout.type, Byte] = new Appender[Stdout.type, Byte] {
-    override def doNotClose = true
-    def appendOutput(stdout: Stdout.type)(implicit mode: Mode[IoMethods]):
-        mode.Wrap[Output[Byte], Exception] =
-      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
-  }
-  
-  
+  implicit val stdoutWriter: JavaOutputStreamWriter[Stdout.type] =
+    new JavaOutputStreamWriter[Stdout.type](x => System.out) {
+      override def doNotClose = true
+    }
+
   implicit val stderrWriter: Writer[Stderr.type, Byte] = new Writer[Stderr.type, Byte] {
     override def doNotClose = true
     def output(stderr: Stderr.type)(implicit mode: Mode[IoMethods]):
@@ -266,6 +259,34 @@ trait Writer[-Resource, @specialized(Byte, Char) Data] {
   def output(res: Resource)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception]
 }
 
+object Appender {
+
+  implicit def byteToCharAppenders[T](implicit jisw: JavaOutputAppender[T],
+      encoding: Encoding): Appender[T, Char] = new Appender[T, Char] {
+    override def doNotClose = jisw.doNotClose
+    def appendOutput(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
+      mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+  
+  implicit def byteToLineAppenders[T](implicit jisw: JavaOutputAppender[T],
+      encoding: Encoding): Appender[T, String] = new Appender[T, String] {
+    override def doNotClose = jisw.doNotClose
+    def appendOutput(t: T)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Output[String], Exception] = mode.wrap(new LineOutput(
+        new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+
+  implicit val stdoutAppender: JavaOutputAppender[Stdout.type] =
+    new JavaOutputAppender[Stdout.type](x => System.out) {
+      override def doNotClose = true
+    }
+
+  implicit val stderrAppender: JavaOutputAppender[Stderr.type] =
+    new JavaOutputAppender[Stderr.type](x => System.err) {
+      override def doNotClose = true
+    }
+
+}
 trait Appender[-Resource, Data] {
   def doNotClose = false
   def appendOutput(res: Resource)(implicit mode: Mode[IoMethods]):
