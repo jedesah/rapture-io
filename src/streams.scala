@@ -238,6 +238,14 @@ object Writer {
       mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
   }
   
+  implicit val stdoutAppender: Appender[Stdout.type, Byte] = new Appender[Stdout.type, Byte] {
+    override def doNotClose = true
+    def appendOutput(stdout: Stdout.type)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Output[Byte], Exception] =
+      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
+  }
+  
+  
   implicit val stderrWriter: Writer[Stderr.type, Byte] = new Writer[Stderr.type, Byte] {
     override def doNotClose = true
     def output(stderr: Stderr.type)(implicit mode: Mode[IoMethods]):
