@@ -222,22 +222,23 @@ object Writable {
 object Writer {
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, String] = new Writer[T, String] {
+    override def doNotClose = jisw.doNotClose
     def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[String], Exception] =
       mode.wrap(new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, Char] = new Writer[T, Char] {
+    override def doNotClose = jisw.doNotClose
     def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
       mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
-  implicit val stdoutWriter: Writer[Stdout.type, Byte] = new Writer[Stdout.type, Byte] {
-    override def doNotClose = true
-    def output(stdout: Stdout.type)(implicit mode: Mode[IoMethods]):
-        mode.Wrap[Output[Byte], Exception] =
-      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
-  }
   
+  implicit val stdoutWriter: JavaOutputStreamWriter[Stdout.type] =
+    new JavaOutputStreamWriter[Stdout.type](x => System.out) {
+      override def doNotClose = true
+    }
+
   implicit val stderrWriter: Writer[Stderr.type, Byte] = new Writer[Stderr.type, Byte] {
     override def doNotClose = true
     def output(stderr: Stderr.type)(implicit mode: Mode[IoMethods]):
@@ -248,19 +249,47 @@ object Writer {
 
 /** Type trait for defining how a resource of type U should 
   *
-  * @tparam Url Url for which this corresponds
+  * @tparam Resource Resource for which this corresponds
   * @tparam Data Units of data to be streamed, typically `Byte` or `Char` */
-@implicitNotFound(msg = "Cannot write ${Data} data to ${UrlType} resources. Note that if you "+
+@implicitNotFound(msg = "Cannot write ${Data} data to ${Resource} resources. Note that if you "+
     "are working with Char data, you will require an implicit character encoding, e.g. "+
     "import encodings.system or import encodings.`UTF-8`.")
-trait Writer[-UrlType, @specialized(Byte, Char) Data] {
+trait Writer[-Resource, @specialized(Byte, Char) Data] {
   def doNotClose = false
-  def output(url: UrlType)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception]
+  def output(res: Resource)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Data], Exception]
 }
 
-trait Appender[-UrlType, Data] {
+object Appender {
+
+  implicit def byteToCharAppenders[T](implicit jisw: JavaOutputAppender[T],
+      encoding: Encoding): Appender[T, Char] = new Appender[T, Char] {
+    override def doNotClose = jisw.doNotClose
+    def appendOutput(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
+      mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+  
+  implicit def byteToLineAppenders[T](implicit jisw: JavaOutputAppender[T],
+      encoding: Encoding): Appender[T, String] = new Appender[T, String] {
+    override def doNotClose = jisw.doNotClose
+    def appendOutput(t: T)(implicit mode: Mode[IoMethods]):
+        mode.Wrap[Output[String], Exception] = mode.wrap(new LineOutput(
+        new OutputStreamWriter(jisw.getOutputStream(t))))
+  }
+
+  implicit val stdoutAppender: JavaOutputAppender[Stdout.type] =
+    new JavaOutputAppender[Stdout.type](x => System.out) {
+      override def doNotClose = true
+    }
+
+  implicit val stderrAppender: JavaOutputAppender[Stderr.type] =
+    new JavaOutputAppender[Stderr.type](x => System.err) {
+      override def doNotClose = true
+    }
+
+}
+trait Appender[-Resource, Data] {
   def doNotClose = false
-  def appendOutput(url: UrlType)(implicit mode: Mode[IoMethods]):
+  def appendOutput(res: Resource)(implicit mode: Mode[IoMethods]):
       mode.Wrap[Output[Data], Exception]
 }
 
@@ -509,26 +538,26 @@ object Reader extends LowPriorityReader {
 
 /** Generic type class for reading a particular kind of data from 
   */
-@implicitNotFound(msg = "Cannot find implicit Reader for ${UrlType} resources. "+
-    "${UrlType} resources can only be read if a Reader implicit exists within scope. "+
+@implicitNotFound(msg = "Cannot find implicit Reader for ${Resource} resources. "+
+    "${Resource} resources can only be read if a Reader implicit exists within scope. "+
     "Note that if you are working with Char data, you will require an implicit character "+
     "encoding, e.g. import encodings.system or import encodings.`UTF-8`.")
-trait Reader[-UrlType, @specialized(Byte, Char) Data] {
+trait Reader[-Resource, @specialized(Byte, Char) Data] {
   
   implicit private val errorHandler = raw
 
   def doNotClose = false
 
-  /** Creates the `Input` for streaming data of the specified type from the given URL
+  /** Creates the `Input` for streaming data of the specified type from the given resource
     *
-    * @param url The URL to get the input stream from
-    * @return an `Input[Data]` for the specified URL */
-  def input(url: UrlType)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Data], Exception]
+    * @param res The resource to get the input stream from
+    * @return an `Input[Data]` for the specified resource */
+  def input(res: Resource)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Data], Exception]
   
-  /** Pumps data from the specified URL to the given destination URL */
-  def pump[DestUrlType <: Url[DestUrlType]](url: UrlType, dest: DestUrlType)(implicit sw:
-      Writer[DestUrlType, Data], mf: ClassTag[Data]): Int =
-    input(url) pumpTo sw.output(dest)
+  /** Pumps data from the specified resource to the given destination resource */
+  def pump[DestResource <: Url[DestResource]](res: Resource, dest: DestResource)(implicit sw:
+      Writer[DestResource, Data], mf: ClassTag[Data]): Int =
+    input(res) pumpTo sw.output(dest)
 }
 
 /** Type class object for reading `Char`s from a `String` */

@@ -85,6 +85,7 @@ immediately beneath it in the hierarchy, and `isDirectory` which returns true on
 resource is capable of having children (though it may not actually have any).
 
 ```
+import rapture.uri._
 val dir: FileUrl = uri"file:///home/work/dev"
 val files: Seq[FileUrl] = dir.children
 ```
@@ -180,6 +181,7 @@ The easiest way to specify a character encoding is to import one, like this:
 
 ```
 import rapture.io._
+import rapture.codec._
 import encodings.`UTF-8`
 ```
 

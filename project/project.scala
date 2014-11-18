@@ -7,7 +7,7 @@ object project extends ProjectSettings {
   def dependencies = Seq(
     "codec" -> "1.0.0",
     "uri" -> "1.0.0",
-    "mime" -> "0.9.0"
+    "mime" -> "0.10.0"
   )
   
   def thirdPartyDependencies = Nil
