@@ -55,8 +55,6 @@ case class Multipart(data: Array[Byte], headers: Map[String, String]) {
 class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: Int = 160)
     extends Input[Multipart] {
   
-  implicit val logZone = Zone("multipart")
-  
   private val bnd = ("--"+boundary).getBytes("ASCII")
   
   private var finished = false

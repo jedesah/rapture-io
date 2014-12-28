@@ -1,6 +1,6 @@
 /**********************************************************************************************\
 * Rapture I/O Library                                                                          *
-* Version 0.10.0                                                                               *
+* Version 0.10.1                                                                               *
 *                                                                                              *
 * The primary distribution site is                                                             *
 *                                                                                              *
@@ -102,6 +102,7 @@ object Slurpable {
       mode.wrap {
         val c = accumulatorBuilder.make()
         res.handleInput[Data, Int](_ pumpTo c)
+        c.close()
         c.buffer
       }
   }
