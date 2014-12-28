@@ -126,8 +126,6 @@ trait AppenderBuilder[OutputType, Data] { def appendOutput(s: OutputType): Outpu
 
 object Appendable {
   class Capability[Res](res: Res) {
-    implicit protected val errorHandler = raw
-
     def appendOutput[Data](implicit sa: Appender[Res, Data], mode: Mode[IoMethods]) =
       sa.appendOutput(res)
     
@@ -145,11 +143,9 @@ object Appendable {
 object Readable {
   class Capability[Res](res: Res) {
 
-    implicit private val errorHandler = raw
-
     /** Gets the input for the resource specified in this resource */
     def input[Data](implicit sr: Reader[Res, Data], mode: Mode[IoMethods]):
-      mode.Wrap[Input[Data], Exception] = mode.wrap(sr.input(res))
+      mode.Wrap[Input[Data], Exception] = mode.flatWrap(sr.input(res))
    
     /** Pumps the input for the specified resource to the destination resource provided */
     def >[Data, DestRes](dest: DestRes)(implicit sr:
@@ -197,13 +193,11 @@ object Readable {
 object Writable {
   class Capability[Res](res: Res) {
     
-    implicit private val errorHandler = raw
-    
     /** Gets the output stream directly
       *
       * @tparam Data The type of data to be carried by the `Output` */
     def output[Data](implicit sw: Writer[Res, Data], mode: Mode[IoMethods]):
-        mode.Wrap[Output[Data], Exception] = mode.wrap(sw.output(res))
+        mode.Wrap[Output[Data], Exception] = mode.flatWrap(sw.output(res))
     
     /** Carefully handles writing to the output stream, ensuring that it is closed following
       * data being written.
@@ -243,7 +237,9 @@ object Writer {
     override def doNotClose = true
     def output(stderr: Stderr.type)(implicit mode: Mode[IoMethods]):
         mode.Wrap[Output[Byte], Exception] =
-      mode.wrap { implicitly[OutputBuilder[OutputStream, Byte]].output(System.out)(raw) }
+      mode.wrap {
+        ?[OutputBuilder[OutputStream, Byte]].output(System.out)(modes.throwExceptions())
+      }
   }
 }
 
@@ -268,12 +264,20 @@ object Appender {
       mode.wrap(new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
   }
   
-  implicit def byteToLineAppenders[T](implicit jisw: JavaOutputAppender[T],
-      encoding: Encoding): Appender[T, String] = new Appender[T, String] {
-    override def doNotClose = jisw.doNotClose
-    def appendOutput(t: T)(implicit mode: Mode[IoMethods]):
-        mode.Wrap[Output[String], Exception] = mode.wrap(new LineOutput(
-        new OutputStreamWriter(jisw.getOutputStream(t))))
+  implicit def bytoToLineAppender[Res](implicit appender: Appender[Res, Byte], enc: Encoding) = {
+    new Appender[Res, String] {
+      override def doNotClose = appender.doNotClose
+      def appendOutput(res: Res)(implicit mode: Mode[IoMethods]):
+          mode.Wrap[Output[String], Exception] = mode.wrap(new Output[String] {
+        private lazy val output = appender.appendOutput(res)(modes.throwExceptions())
+        def close() = output.close()
+        def flush() = output.flush()
+        def write(s: String) = {
+          output.writeBlock((s+"\n").getBytes(enc.name))
+          output.flush()
+        }
+      })
+    }
   }
 
   implicit val stdoutAppender: JavaOutputAppender[Stdout.type] =
@@ -531,7 +535,9 @@ object Reader extends LowPriorityReader {
   implicit val stdinReader: Reader[Stdin.type, Byte] = new Reader[Stdin.type, Byte] {
     def input(stdin: Stdin.type)(implicit mode: Mode[IoMethods]):
         mode.Wrap[Input[Byte], Exception] =
-      mode.wrap { implicitly[InputBuilder[InputStream, Byte]].input(System.in)(raw) }
+      mode.wrap {
+        implicitly[InputBuilder[InputStream, Byte]].input(System.in)(modes.throwExceptions())
+      }
   }
   
 }
@@ -544,8 +550,6 @@ object Reader extends LowPriorityReader {
     "encoding, e.g. import encodings.system or import encodings.`UTF-8`.")
 trait Reader[-Resource, @specialized(Byte, Char) Data] {
   
-  implicit private val errorHandler = raw
-
   def doNotClose = false
 
   /** Creates the `Input` for streaming data of the specified type from the given resource
