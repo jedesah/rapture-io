@@ -513,6 +513,46 @@ object Reader extends LowPriorityReader {
         mode.wrap(in)
     }
 
+  implicit def byteInputToCharReader(implicit encoding: Encoding): Reader[Input[Char], Byte] =
+    new Reader[Input[Char], Byte] {
+      def input(in: Input[Char])(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte],
+          Exception] = mode.wrap {
+        new Input[Byte] {
+          private var cued: Array[Byte] = Array()
+          private var index = 0
+          def read(): Option[Byte] = {
+            if(index >= cued.length) {
+              // FIXME: Find a less stupid way of doing this
+              val next = in.read()
+              if(next.isEmpty) return None
+              cued = next.get.toString.getBytes(encoding.name)
+              index = 0
+            }
+            val next = cued(index)
+            index += 1
+            Some(next)
+          }
+          def ready(): Boolean = in.ready() || index < cued.length
+          def close(): Unit = in.close()
+        }
+      }
+    }
+    
+  implicit def charInputToByteReader(implicit encoding: Encoding): Reader[Input[Byte], Char] =
+    new Reader[Input[Byte], Char] {
+      def input(in: Input[Byte])(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Char],
+          Exception] = mode.wrap {
+        val javaInputStream = new InputStream {
+          def read(): Int = {
+            val r = in.read()
+            if(r.isDefined) r.get.toInt else -1
+          }
+        }
+        new CharInput(new InputStreamReader(javaInputStream, encoding.name))
+      }
+    }
+
+
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): Reader[T, String] = new Reader[T, String] {
     def input(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[String], Exception] =
