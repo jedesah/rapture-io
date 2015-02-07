@@ -37,8 +37,8 @@ object `package` {
   implicit def inputStreamUnwrapper(is: Input[Byte]): InputStream =
     new InputStream { def read() = is.read().map(_.toInt).getOrElse(-1) }
 
-  implicit val classpathStreamByteReader: JavaInputStreamReader[ClasspathUrl] =
-    ClasspathStreamByteReader
+  implicit def classpathStreamByteReader(implicit cl: ClassLoader): JavaInputStreamReader[ClasspathUrl] =
+    ClasspathStream.classpathStreamByteReader
 
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
       Result = Utils.ensuring[Result, Stream](create)(body)(close)
