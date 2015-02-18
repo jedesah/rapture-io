@@ -248,7 +248,7 @@ trait Writer[-Resource, @specialized(Byte, Char) Data] {
   def output(res: Resource): Output[Data]
 }
 
-object Appender {
+object Appender extends Appender_1 {
 
   implicit def byteToCharAppenders[T](implicit jisw: JavaOutputAppender[T],
       encoding: Encoding): Appender[T, Char] = new Appender[T, Char] {
@@ -257,7 +257,7 @@ object Appender {
       new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t)))
   }
   
-  implicit def bytoToLineAppender[Res](implicit appender: Appender[Res, Byte], enc: Encoding) = {
+  implicit def byteToLineAppender[Res](implicit appender: Appender[Res, Byte], enc: Encoding) = {
     new Appender[Res, String] {
       override def doNotClose = appender.doNotClose
       def appendOutput(res: Res): Output[String] = new Output[String] {
@@ -282,7 +282,31 @@ object Appender {
       override def doNotClose = true
     }
 
+  implicit val stdoutCharAppender: Appender[Stdout.type, Char] =
+    byteToCharAppenders(stdoutAppender, encodings.system())
+  
+  implicit val stderrCharAppender: Appender[Stderr.type, Char] =
+    byteToCharAppenders(stderrAppender, encodings.system())
+
 }
+
+trait Appender_1 {
+  implicit def charToLineAppender[Res](implicit appender: Appender[Res, Char]) = {
+    new Appender[Res, String] {
+      override def doNotClose = appender.doNotClose
+      def appendOutput(res: Res): Output[String] = new Output[String] {
+        private lazy val output = appender.appendOutput(res)
+        def close() = output.close()
+        def flush() = output.flush()
+        def write(s: String) = {
+          output.writeBlock((s+"\n").to[Array])
+          output.flush()
+        }
+      }
+    }
+  }
+}
+
 trait Appender[-Resource, Data] {
   def doNotClose = false
   def appendOutput(res: Resource):
@@ -490,14 +514,14 @@ trait Output[@specialized(Byte, Char) Data] {
   def close(): Unit
 }
 
-trait LowPriorityReader {
+trait Reader_1 {
   implicit def stringByteReader(implicit encoding: Encoding): Reader[String, Byte] =
     new Reader[String, Byte] {
       def input(s: String): Input[Byte] = ByteArrayInput(s.getBytes(encoding.name))
     }
 }
 
-object Reader extends LowPriorityReader {
+object Reader extends Reader_1 {
   implicit def inputStreamReader[T, I[T] <: Input[T]]: Reader[I[T], T] =
     new Reader[I[T], T] {
       def input(in: I[T]): Input[T] = in
@@ -555,6 +579,7 @@ object Reader extends LowPriorityReader {
     slurpable(res).slurp[Byte]
 
   implicit val stringCharReader: Reader[String, Char] = StringCharReader
+  implicit val stringLineReader: Reader[String, String] = StringLineReader
   implicit val byteArrayReader: Reader[Array[Byte], Byte] = ByteArrayReader
   implicit val bytesReader: Reader[Bytes, Byte] = BytesReader
 
@@ -590,6 +615,19 @@ trait Reader[-Resource, @specialized(Byte, Char) Data] {
 /** Type class object for reading `Char`s from a `String` */
 object StringCharReader extends Reader[String, Char] {
   def input(s: String): Input[Char] = StringIsInput(s)
+}
+
+object StringLineReader extends Reader[String, String] {
+  def input(s: String): Input[String] = new Input[String] {
+    private val lines = s.split("\n")
+    private var cur = -1
+    def ready() = cur < lines.length
+    def close() = ()
+    def read() = {
+      cur += 1
+      if(ready()) Some(lines(cur)) else None
+    }
+  }
 }
 
 /** Type class object for reading `Byte`s from a `Array[Byte]` */

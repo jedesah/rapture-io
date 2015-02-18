@@ -21,7 +21,7 @@
 package rapture.io
 import rapture.core._
 
-trait LowPriorityCopyable {
+trait Copyable_1 {
   implicit def streamableCopyable[SrcType, DestType](implicit reader: Reader[SrcType, Byte],
       writer: Writer[DestType, Byte]): Copyable[SrcType, DestType] =
     new Copyable[SrcType, DestType] {
@@ -32,7 +32,7 @@ trait LowPriorityCopyable {
     }
 }
 
-object Copyable extends LowPriorityCopyable {
+object Copyable extends Copyable_1 {
 
   trait Summary
 

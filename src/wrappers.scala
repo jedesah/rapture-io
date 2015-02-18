@@ -183,8 +183,7 @@ class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
   def output(t: T): Output[Byte] = new ByteOutput(new BufferedOutputStream(getOutputStream(t)))
 }
 
-class JavaOutputAppender[T](val getOutputStream: T => OutputStream) extends
-    Appender[T, Byte] {
+class JavaOutputAppender[T](val getOutputStream: T => OutputStream) extends Appender[T, Byte] {
   def appendOutput(t: T): Output[Byte] = new ByteOutput(new BufferedOutputStream(getOutputStream(t)))
 }
 

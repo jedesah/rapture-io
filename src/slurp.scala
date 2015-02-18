@@ -27,12 +27,12 @@ import scala.reflect._
 
 import java.io._
 
-trait LowPriorityAccumulatorBuilder {
+trait AccumulatorBuilder_1 {
   implicit val byteAccumulator: AccumulatorBuilder[Byte] { type Out = Bytes } = ByteAccumulator
   implicit val stringAccumulator: AccumulatorBuilder[String] { type Out = String } = StringAccumulator
 }
 
-object AccumulatorBuilder extends LowPriorityAccumulatorBuilder {
+object AccumulatorBuilder extends AccumulatorBuilder_1 {
   implicit val charAccumulator: AccumulatorBuilder[Char] { type Out = String } = CharAccumulator
 }
 /** Interface for an accumulator which is a special kind of output which collects and stores all
