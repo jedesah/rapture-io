@@ -519,6 +519,8 @@ trait Reader_1 {
     new Reader[String, Byte] {
       def input(s: String): Input[Byte] = ByteArrayInput(s.getBytes(encoding.name))
     }
+  
+  implicit val stringLineReader: Reader[String, String] = StringLineReader
 }
 
 object Reader extends Reader_1 {
@@ -579,7 +581,6 @@ object Reader extends Reader_1 {
     slurpable(res).slurp[Byte]
 
   implicit val stringCharReader: Reader[String, Char] = StringCharReader
-  implicit val stringLineReader: Reader[String, String] = StringLineReader
   implicit val byteArrayReader: Reader[Array[Byte], Byte] = ByteArrayReader
   implicit val bytesReader: Reader[Bytes, Byte] = BytesReader
 
