@@ -30,7 +30,7 @@ object Movable {
   }
 
   class Capability[FromType](from: FromType) {
-    def moveTo[ToType](to: ToType)(implicit mode: Mode[IoMethods],
+    def moveTo[ToType](to: ToType)(implicit mode: Mode[`Movable#moveTo`],
         movable: Movable[FromType, ToType]): mode.Wrap[Summary, Exception] =
       mode.wrap(?[Movable[FromType, ToType]].move(from, to))
   }

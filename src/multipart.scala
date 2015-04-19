@@ -72,7 +72,7 @@ class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: 
     
     var buf: Array[Byte] = null
     var count = -1
-    val bufs = new ListBuffer[Array[Byte]]()
+    val bufs = alloc[ListBuffer[Array[Byte]]]()
 
     var headers: Map[String, String] = Map()
     var dataStart = 0
@@ -92,7 +92,7 @@ class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: 
           count += 1
           buf(count%65536) = next
         }
-        headers = new String(buf.slice(1, dataStart), "ISO-8859-1").split("\r").map({ h =>
+        headers = alloc[String](buf.slice(1, dataStart), "ISO-8859-1").split("\r").map({ h =>
           val i = h.indexOf(':')
           h.substring(0, i) -> h.substring(i + 2, h.length)
         }).toMap
@@ -105,8 +105,8 @@ class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: 
         }
         
         if(count%65536 == 0) {
-          if(count > sizeLimit) throw new RuntimeException("Upload size limit exceeded.")
-          buf = new Array[Byte](65536)
+          if(count > sizeLimit) throw alloc[RuntimeException]("Upload size limit exceeded.")
+          buf = alloc(65536)
           bufs += buf
         }
         
@@ -119,7 +119,7 @@ class MultipartReader(boundary: String, in: java.io.InputStream, val sizeLimit: 
           val size = dataEnd - dataStart
           
           if(size >= 0) {
-            val res = new Array[Byte](size)
+            val res: Array[Byte] = alloc(size)
             var done = 0
             var i = 0
             var offset = dataStart

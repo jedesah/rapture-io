@@ -37,20 +37,20 @@ object Finance {
   trait Rub
 
   class Currency[T](val code: String, val name: String, val dp: Int, val prefix: String)
-  implicit val GbpCurrency = new Currency[Gbp]("GBP", "Pounds Sterling", 2, "£")
-  implicit val UsdCurrency = new Currency[Usd]("USD", "US Dollars", 2, "$")
-  implicit val ChfCurrency = new Currency[Chf]("CHF", "Swiss Francs", 2, "Fr")
-  implicit val EurCurrency = new Currency[Eur]("EUR", "Euros", 2, "€")
-  implicit val CadCurrency = new Currency[Cad]("CAD", "Canadian Dollars", 2, "$")
-  implicit val CnyCurrency = new Currency[Cny]("CNY", "Chinese Yuan", 2, "¥")
-  implicit val DkkCurrency = new Currency[Dkk]("DKK", "Danish Krone", 2, "kr")
-  implicit val InrCurrency = new Currency[Inr]("INR", "Indian Rupees", 2, "Rs")
-  implicit val JpyCurrency = new Currency[Jpy]("JPY", "Japanese Yen", 2, "¥")
-  implicit val NokCurrency = new Currency[Nok]("NOK", "Norwegian Krone", 2, "kr")
-  implicit val NzdCurrency = new Currency[Nzd]("NZD", "New Zealand Dollars", 2, "$")
-  implicit val RubCurrency = new Currency[Rub]("RUB", "Russian Rubles", 2, "р")
+  implicit val GbpCurrency: Currency[Gbp] = alloc("GBP", "Pounds Sterling", 2, "£")
+  implicit val UsdCurrency: Currency[Usd] = alloc("USD", "US Dollars", 2, "$")
+  implicit val ChfCurrency: Currency[Chf] = alloc("CHF", "Swiss Francs", 2, "Fr")
+  implicit val EurCurrency: Currency[Eur] = alloc("EUR", "Euros", 2, "€")
+  implicit val CadCurrency: Currency[Cad] = alloc("CAD", "Canadian Dollars", 2, "$")
+  implicit val CnyCurrency: Currency[Cny] = alloc("CNY", "Chinese Yuan", 2, "¥")
+  implicit val DkkCurrency: Currency[Dkk] = alloc("DKK", "Danish Krone", 2, "kr")
+  implicit val InrCurrency: Currency[Inr] = alloc("INR", "Indian Rupees", 2, "Rs")
+  implicit val JpyCurrency: Currency[Jpy] = alloc("JPY", "Japanese Yen", 2, "¥")
+  implicit val NokCurrency: Currency[Nok] = alloc("NOK", "Norwegian Krone", 2, "kr")
+  implicit val NzdCurrency: Currency[Nzd] = alloc("NZD", "New Zealand Dollars", 2, "$")
+  implicit val RubCurrency: Currency[Rub] = alloc("RUB", "Russian Rubles", 2, "р")
 
-  trait MoneyFactory[T] { def apply(d: Double)(implicit currency: Currency[T]) = new Money[T](d) }
+  trait MoneyFactory[T] { def apply(d: Double)(implicit currency: Currency[T]): Money[T] = alloc(d) }
 
   object Usd extends MoneyFactory[Usd]
   object Gbp extends MoneyFactory[Gbp]

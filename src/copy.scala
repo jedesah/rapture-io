@@ -41,7 +41,7 @@ object Copyable extends Copyable_1 {
   }
 
   class Capability[SrcType](from: SrcType) {
-    def copyTo[DestType](to: DestType)(implicit mode: Mode[IoMethods],
+    def copyTo[DestType](to: DestType)(implicit mode: Mode[`Copyable#copyTo`],
         copyable: Copyable[SrcType, DestType]): mode.Wrap[Summary, Exception] =
       mode.wrap(?[Copyable[SrcType, DestType]].copy(from, to))
   }

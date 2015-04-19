@@ -46,17 +46,17 @@ object Utils {
 }
 
 /** Makes a `String` viewable as an `rapture.io.Input[Char]` */
-case class StringIsInput(string: String) extends CharInput(new StringReader(string))
+case class StringIsInput(string: String) extends CharInput(alloc[StringReader](string))
 
 /** Makes an `Array[Byte]` viewable as an `Input[Byte]` */
-case class ByteArrayInput(array: Array[Byte]) extends ByteInput(new ByteArrayInputStream(array))
+case class ByteArrayInput(array: Array[Byte]) extends ByteInput(alloc[ByteArrayInputStream](array))
 
 object InputBuilder {
   implicit def stringInputBuilder(implicit encoding: Encoding): InputBuilder[InputStream,
       String] =
     new InputBuilder[InputStream, String] {
       def input(s: InputStream): Input[String] =
-        new LineInput(new InputStreamReader(s, encoding.name))
+        alloc[LineInput](alloc[InputStreamReader](s, encoding.name))
     }
   /** Type class definition for creating an Input[Char] from a Java InputStream, taking an
     * [[Encoding]] implicitly for converting between `Byte`s and `Char`s */
@@ -64,7 +64,7 @@ object InputBuilder {
       InputBuilder[InputStream, Char] =
     new InputBuilder[InputStream, Char] {
       def input(s: InputStream): Input[Char] =
-        new CharInput(new InputStreamReader(s, encoding.name))
+        alloc[CharInput](alloc[InputStreamReader](s, encoding.name))
     }
   implicit val buildInputStream: InputBuilder[InputStream, Byte] = InputStreamBuilder
   implicit val buildReader: InputBuilder[java.io.Reader, Char] = ReaderBuilder
@@ -96,7 +96,7 @@ object OutputBuilder {
       OutputBuilder[OutputStream, Char] =
     new OutputBuilder[OutputStream, Char] {
       def output(s: OutputStream): Output[Char] =
-        new CharOutput(new OutputStreamWriter(s, encoding.name))
+        alloc[CharOutput](alloc[OutputStreamWriter](s, encoding.name))
     }
 
 
@@ -114,7 +114,7 @@ trait OutputBuilder[OutputType, Data] {
 object AppenderBuilder {
   implicit def buildAppender: AppenderBuilder[java.io.Writer, Char] =
     new AppenderBuilder[java.io.Writer, Char] {
-      def appendOutput(s: java.io.Writer) = new CharOutput(s)
+      def appendOutput(s: java.io.Writer) = alloc[CharOutput](s)
     }
 }
 
@@ -122,7 +122,7 @@ trait AppenderBuilder[OutputType, Data] { def appendOutput(s: OutputType): Outpu
 
 object Appendable {
   class Capability[Res](res: Res) {
-    def appendOutput[Data](implicit sa: Appender[Res, Data], mode: Mode[IoMethods]) =
+    def appendOutput[Data](implicit sa: Appender[Res, Data], mode: Mode[`Appendable#appendOutput`]) =
       sa.appendOutput(res)
     
     def handleAppend[Data, Result](body: Output[Data] => Result)(implicit sw:
@@ -140,26 +140,32 @@ object Readable {
   class Capability[Res](res: Res) {
 
     /** Gets the input for the resource specified in this resource */
-    def input[Data](implicit sr: Reader[Res, Data], mode: Mode[IoMethods]):
+    def input[Data](implicit sr: Reader[Res, Data], mode: Mode[`Readable#input`]):
       mode.Wrap[Input[Data], Exception] = mode.wrap(sr.input(res))
    
     /** Pumps the input for the specified resource to the destination resource provided */
-    def >[Data, DestRes](dest: DestRes)(implicit sr:
-        Reader[Res, Data], sw: Writer[DestRes, Data], mode: Mode[IoMethods],
-        mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
+    def redirectTo[Data, DestRes](dest: DestRes)(implicit sr: Reader[Res, Data], sw: Writer[DestRes, Data],
+        mode: Mode[`Readable#redirectTo`], mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
       mode.wrap(handleInput[Data, Int] { in =>
         writable(dest).handleOutput[Data, Int](in pumpTo _)
       })
     
-    def |[Data, DestRes](dest: DestRes)(implicit sr:
+    def >[Data, DestRes](dest: DestRes)(implicit sr: Reader[Res, Data], sw: Writer[DestRes, Data],
+        mode: Mode[`Readable#redirectTo`], mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
+      redirectTo[Data, DestRes](dest)(sr, sw, mode, mf)
+    
+    def pipeTo[Data, DestRes](dest: DestRes)(implicit sr:
         Reader[Res, Data], sw: Writer[DestRes, Data], mf: ClassTag[Data]):
         DestRes = {
-          >(dest)
+          redirectTo(dest)
           dest
         }
 
+    def |[Data, DestRes](dest: DestRes)(implicit sr: Reader[Res, Data], sw: Writer[DestRes, Data],
+        mf: ClassTag[Data]): DestRes = pipeTo(dest)(sr, sw, mf)
+
     def >>[Data, DestRes](dest: DestRes)(implicit sr:
-        Reader[Res, Data], sw: Appender[DestRes, Data], mode: Mode[IoMethods],
+        Reader[Res, Data], sw: Appender[DestRes, Data], mode: Mode[`Readable#appendTo`],
         mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
       mode.wrap(handleInput[Data, Int] { in =>
         dest.handleAppend[Data, Int](in pumpTo _)
@@ -170,7 +176,7 @@ object Readable {
       * @tparam Data The type that the data should be pumped as
       * @param out The destination for data to be pumped to */
     def >[Data](out: Output[Data])(implicit sr: Reader[Res, Data],
-        mode: Mode[IoMethods], mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
+        mode: Mode[`Readable#redirectTo`], mf: ClassTag[Data]): mode.Wrap[Int, Exception] =
       mode.wrap(handleInput[Data, Int](_ pumpTo out))
 
     /** Carefully handles writing to the input stream, ensuring that it is closed following
@@ -192,7 +198,7 @@ object Writable {
     /** Gets the output stream directly
       *
       * @tparam Data The type of data to be carried by the `Output` */
-    def output[Data](implicit sw: Writer[Res, Data], mode: Mode[IoMethods]):
+    def output[Data](implicit sw: Writer[Res, Data], mode: Mode[`Writable#output`]):
         mode.Wrap[Output[Data], Exception] = mode.wrap(sw.output(res))
     
     /** Carefully handles writing to the output stream, ensuring that it is closed following
@@ -213,15 +219,13 @@ object Writer {
   implicit def byteToLineWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, String] = new Writer[T, String] {
     override def doNotClose = jisw.doNotClose
-    def output(t: T): Output[String] =
-      (new LineOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T): Output[String] = alloc[LineOutput](alloc[OutputStreamWriter](jisw.getOutputStream(t)))
   }
 
   implicit def byteToCharWriters[T](implicit jisw: JavaOutputStreamWriter[T],
       encoding: Encoding): Writer[T, Char] = new Writer[T, Char] {
     override def doNotClose = jisw.doNotClose
-    def output(t: T): Output[Char] =
-      (new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t))))
+    def output(t: T): Output[Char] = alloc[CharOutput](alloc[OutputStreamWriter](jisw.getOutputStream(t)))
   }
   
   implicit val stdoutWriter: JavaOutputStreamWriter[Stdout.type] =
@@ -254,7 +258,7 @@ object Appender extends Appender_1 {
       encoding: Encoding): Appender[T, Char] = new Appender[T, Char] {
     override def doNotClose = jisw.doNotClose
     def appendOutput(t: T): Output[Char] =
-      new CharOutput(new OutputStreamWriter(jisw.getOutputStream(t)))
+      alloc[CharOutput](alloc[OutputStreamWriter](jisw.getOutputStream(t)))
   }
   
   implicit def byteToLineAppender[Res](implicit appender: Appender[Res, Byte], enc: Encoding) = {
@@ -339,8 +343,9 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
   private var beingHandled = false
 
   override def toString() = "<input>"
-  
-  def length: Int = throw new Exception("Cannot calculate length of a stream")
+ 
+  // FIXME: This just shouldn't be a Seq
+  def length: Int = throw alloc[Exception]("Cannot calculate length of a stream")
 
   def apply(n: Int) = {
     for(i <- 0 until n) read()
@@ -416,7 +421,7 @@ trait Input[@specialized(Byte, Char) Data] extends Seq[Data] { thisInput =>
     *
     * @param out The output stream to receive data pumped from this `Input` */
   def pumpTo(out: Output[Data])(implicit mf: ClassTag[Data]): Int = {
-    val buf = new Array[Data](65536)
+    val buf: Array[Data] = alloc(65536)
     var len = readBlock(buf)
     var count = 0
     while(len >= 0) {
@@ -560,7 +565,7 @@ object Reader extends Reader_1 {
             if(r.isDefined) r.get.toInt else -1
           }
         }
-        new CharInput(new InputStreamReader(javaInputStream, encoding.name))
+        alloc[CharInput](alloc[InputStreamReader](javaInputStream, encoding.name))
       }
     }
 
@@ -568,13 +573,13 @@ object Reader extends Reader_1 {
   implicit def byteToLineReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): Reader[T, String] = new Reader[T, String] {
     def input(t: T): Input[String] =
-      new LineInput(new InputStreamReader(jisr.getInputStream(t)))
+      alloc[LineInput](alloc[InputStreamReader](jisr.getInputStream(t)))
   }
 
   implicit def byteToCharReaders[T](implicit jisr: JavaInputStreamReader[T],
       encoding: Encoding): Reader[T, Char] = new Reader[T, Char] {
     def input(t: T): Input[Char] =
-      new CharInput(new InputStreamReader(jisr.getInputStream(t)))
+      alloc[CharInput](alloc[InputStreamReader](jisr.getInputStream(t)))
   }
 
   implicit def resourceBytes[Res](res: Res)(implicit sr: Reader[Res, Byte]): Bytes =

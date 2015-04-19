@@ -44,5 +44,5 @@ object javaResources {
       new java.io.FileOutputStream(_))
   
   implicit val javaFileAppender = new JavaOutputAppender[java.io.File](f =>
-      new java.io.FileOutputStream(f, true))
+      alloc[java.io.FileOutputStream](f, true))
 }

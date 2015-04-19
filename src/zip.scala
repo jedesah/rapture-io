@@ -29,14 +29,14 @@ import java.io._
 object Zip {
 
   def zip(data: Map[SimplePath, Input[Byte]], comment: String = null, level: Int = 9): Input[Byte] with TypedInput = {
-    val baos = new ByteArrayOutputStream()
-    val zos = new ZipOutputStream(baos)
+    val baos: ByteArrayOutputStream = alloc()
+    val zos: ZipOutputStream = alloc(baos)
     if(comment != null) zos.setComment(comment)
     zos.setLevel(level)
 
     for((k, in) <- data) {
-      zos.putNextEntry(new ZipEntry(k.toString.substring(1)))
-      in.pumpTo(new ByteOutput(zos))
+      zos.putNextEntry(alloc(k.toString.substring(1)))
+      in.pumpTo(alloc[ByteOutput](zos))
       zos.closeEntry()
     }
     zos.finish()
@@ -48,9 +48,9 @@ object Zip {
   /** GZips an input stream. Note that the current implementation blocks until the input has
     * been read. Future implementations will return after the first read. */
   def gzip(in: Input[Byte]): Input[Byte] with TypedInput = {
-    val baos = new ByteArrayOutputStream()
-    val gzos = new GZIPOutputStream(baos)
-    in.pumpTo(new ByteOutput(gzos))
+    val baos: ByteArrayOutputStream = alloc()
+    val gzos: GZIPOutputStream = alloc(baos)
+    in.pumpTo(alloc[ByteOutput](gzos))
     gzos.finish()
     new ByteArrayInput(baos.toByteArray) with TypedInput {
       def mimeType = MimeTypes.`application/x-gzip`
