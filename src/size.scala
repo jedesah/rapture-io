@@ -26,7 +26,7 @@ import scala.reflect._
 object Sizable {
   class Capability[Res](res: Res) {
     /** Returns the size in bytes of this resource */
-    def size[Data](implicit mode: Mode[IoMethods], sizable: Sizable[Res, Data]): mode.Wrap[Long, Exception] =
+    def size[Data](implicit mode: Mode[`Sizable#size`], sizable: Sizable[Res, Data]): mode.Wrap[Long, Exception] =
       mode wrap sizable.size(res)
   }
 

@@ -27,12 +27,12 @@ import scala.reflect._
 
 import java.io._
 
-trait LowPriorityAccumulatorBuilder {
+trait AccumulatorBuilder_1 {
   implicit val byteAccumulator: AccumulatorBuilder[Byte] { type Out = Bytes } = ByteAccumulator
   implicit val stringAccumulator: AccumulatorBuilder[String] { type Out = String } = StringAccumulator
 }
 
-object AccumulatorBuilder extends LowPriorityAccumulatorBuilder {
+object AccumulatorBuilder extends AccumulatorBuilder_1 {
   implicit val charAccumulator: AccumulatorBuilder[Char] { type Out = String } = CharAccumulator
 }
 /** Interface for an accumulator which is a special kind of output which collects and stores all
@@ -51,14 +51,14 @@ trait AccumulatorBuilder[T] {
 
 /** Collects `Byte`s into an `Array[Byte]` */
 class ByteArrayOutput extends {
-  private val baos = new ByteArrayOutputStream
+  private val baos: ByteArrayOutputStream = alloc()
 } with ByteOutput(baos) with Accumulator[Byte, Bytes] {
   def buffer: Bytes = Bytes(baos.toByteArray)
 }
 
 /** Collects `String`s into another `String` */
 class LinesOutput extends {
-  private val sw = new StringWriter
+  private val sw: StringWriter = alloc()
 } with LineOutput(sw) with Accumulator[String, String] {
   def buffer: String = sw.toString
 }
@@ -66,24 +66,24 @@ class LinesOutput extends {
 /** Type class object for creating an accumulator Bytes into an `Array` of `Byte`s */
 object ByteAccumulator extends AccumulatorBuilder[Byte] {
   type Out = Bytes
-  def make() = new ByteArrayOutput
+  def make(): ByteArrayOutput = alloc()
 }
 
 /** Type class object for creating an accumulator of `String`s */
 object StringAccumulator extends AccumulatorBuilder[String] {
   type Out = String
-  def make() = new LinesOutput
+  def make(): LinesOutput = alloc()
 }
 
 /** Type class object for creating an accumulator of `Char`s into a `String` */
 object CharAccumulator extends AccumulatorBuilder[Char] {
   type Out = String
-  def make() = new StringOutput
+  def make(): StringOutput = alloc()
 }
 
 /** Collects `Char`s into a `String` */
 class StringOutput extends {
-  private val sw = new StringWriter
+  private val sw: StringWriter = alloc()
 } with CharOutput(sw) with Accumulator[Char, String] {
   def buffer: String = sw.toString
 }
@@ -97,7 +97,7 @@ object Slurpable {
       * @usecase def slurp[Byte](): Array[Byte]
       * @tparam Data The units of data being slurped
       * @return The accumulated data */
-    def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], mode: Mode[IoMethods],
+    def slurp[Data]()(implicit accumulatorBuilder: AccumulatorBuilder[Data], mode: Mode[`Slurpable#slurp`],
         sr: Reader[Res, Data], mf: ClassTag[Data]): mode.Wrap[accumulatorBuilder.Out, Exception] =
       mode.wrap {
         val c = accumulatorBuilder.make()

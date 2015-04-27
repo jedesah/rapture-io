@@ -29,7 +29,16 @@ import language.higherKinds
 
 import language.experimental.macros
 
-trait IoMethods extends ModeGroup
+trait `Appendable#appendOutput` extends MethodConstraint
+trait `Readable#input` extends MethodConstraint
+trait `Readable#redirectTo` extends MethodConstraint
+trait `Readable#appendTo` extends MethodConstraint
+trait `Writable#output` extends MethodConstraint
+trait `Sizable#size` extends MethodConstraint
+trait `Slurpable#slurp` extends MethodConstraint
+trait `Copyable#copyTo` extends MethodConstraint
+trait `Movable#moveTo` extends MethodConstraint
+trait `Deletable#delete` extends MethodConstraint
 
 object `package` {
   
@@ -37,38 +46,20 @@ object `package` {
   implicit def inputStreamUnwrapper(is: Input[Byte]): InputStream =
     new InputStream { def read() = is.read().map(_.toInt).getOrElse(-1) }
 
-  implicit val classpathStreamByteReader: JavaInputStreamReader[ClasspathUrl] =
-    ClasspathStreamByteReader
+  implicit def classpathStreamByteReader(implicit cl: ClassLoader): JavaInputStreamReader[ClasspathUrl] =
+    ClasspathStream.classpathStreamByteReader
 
   def ensuring[Result, Stream](create: Stream)(body: Stream => Result)(close: Stream => Unit):
       Result = Utils.ensuring[Result, Stream](create)(body)(close)
 
-  
-  
-  implicit def stringMethods(s: String): StringMethods = new StringMethods(s)
-
-  implicit def copyable[Res](res: Res): Copyable.Capability[Res] =
-    new Copyable.Capability[Res](res)
-  
-  implicit def appendable[Res](res: Res): Appendable.Capability[Res] =
-    new Appendable.Capability[Res](res)
-  
-  implicit def readable[Res](res: Res): Readable.Capability[Res] =
-    new Readable.Capability[Res](res)
-  
-  implicit def deletable[Res](res: Res): Deletable.Capability[Res] =
-    new Deletable.Capability[Res](res)
-  
-  implicit def slurpable[Res](res: Res): Slurpable.Capability[Res] =
-    new Slurpable.Capability[Res](res)
-  
-  implicit def writable[Res](res: Res): Writable.Capability[Res] =
-    new Writable.Capability[Res](res)
-  
-  implicit def movable[Res](res: Res): Movable.Capability[Res] =
-    new Movable.Capability[Res](res)
-  
-  implicit def sizable[Res](res: Res): Sizable.Capability[Res] =
-    new Sizable.Capability[Res](res)
+  implicit def stringMethods(s: String): StringMethods = alloc(s)
+  implicit def copyable[Res](res: Res): Copyable.Capability[Res] = alloc(res)
+  implicit def appendable[Res](res: Res): Appendable.Capability[Res] = alloc(res)
+  implicit def readable[Res](res: Res): Readable.Capability[Res] = alloc(res)
+  implicit def deletable[Res](res: Res): Deletable.Capability[Res] = alloc(res)
+  implicit def slurpable[Res](res: Res): Slurpable.Capability[Res] = alloc(res)
+  implicit def writable[Res](res: Res): Writable.Capability[Res] = alloc(res)
+  implicit def movable[Res](res: Res): Movable.Capability[Res] = alloc(res)
+  implicit def sizable[Res](res: Res): Sizable.Capability[Res] = alloc(res)
   
 }

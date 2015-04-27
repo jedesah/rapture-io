@@ -21,7 +21,7 @@
 package rapture.io
 import rapture.core._
 
-trait LowPriorityCopyable {
+trait Copyable_1 {
   implicit def streamableCopyable[SrcType, DestType](implicit reader: Reader[SrcType, Byte],
       writer: Writer[DestType, Byte]): Copyable[SrcType, DestType] =
     new Copyable[SrcType, DestType] {
@@ -32,7 +32,7 @@ trait LowPriorityCopyable {
     }
 }
 
-object Copyable extends LowPriorityCopyable {
+object Copyable extends Copyable_1 {
 
   trait Summary
 
@@ -41,7 +41,7 @@ object Copyable extends LowPriorityCopyable {
   }
 
   class Capability[SrcType](from: SrcType) {
-    def copyTo[DestType](to: DestType)(implicit mode: Mode[IoMethods],
+    def copyTo[DestType](to: DestType)(implicit mode: Mode[`Copyable#copyTo`],
         copyable: Copyable[SrcType, DestType]): mode.Wrap[Summary, Exception] =
       mode.wrap(?[Copyable[SrcType, DestType]].copy(from, to))
   }

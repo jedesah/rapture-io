@@ -28,28 +28,22 @@ import java.net._
 
 /** Type class object for creating an Input[Byte] from a Java InputStream */
 object InputStreamBuilder extends InputBuilder[InputStream, Byte] {
-  def input(s: InputStream)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte], Exception] =
-    mode.wrap(new ByteInput(s))
+  def input(s: InputStream): Input[Byte] = alloc[ByteInput](s)
 }
 
 /** Type class object for creating an Output[Byte] from a Java Reader */
 object OutputStreamBuilder extends OutputBuilder[OutputStream, Byte] {
-  def output(s: OutputStream)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Byte], Exception] =
-    mode.wrap(new ByteOutput(s))
+  def output(s: OutputStream): Output[Byte] = alloc[ByteOutput](s)
 }
 
-  /*implicit val ProcIsReadable: Reader[Proc, Byte] = new Reader[Proc, Byte] {
-    def input(proc: Proc): ![Input[Byte], Exception] =
-      except(InputStreamBuilder.input(proc.process.getInputStream))
-  }*/
-
-object ClasspathStreamByteReader extends JavaInputStreamReader[ClasspathUrl](url =>
-    getClass.getClassLoader.getResourceAsStream(url.pathString.substring(1)))
-
+object ClasspathStream {
+  def classpathStreamByteReader(implicit cl: ClassLoader) = new JavaInputStreamReader[ClasspathUrl](url =>
+      cl.javaClassLoader.getResourceAsStream(url.pathString.substring(1)))
+}
 /** Wraps a `java.io.Reader` as an `Input[Char]` */
 class CharInput(in: java.io.Reader) extends Input[Char] {
 
-  private val bin = new BufferedReader(in)
+  private val bin = alloc[BufferedReader](in)
 
   def ready() = bin.ready()
   
@@ -69,7 +63,7 @@ class CharInput(in: java.io.Reader) extends Input[Char] {
 /** Wraps a `java.io.InputStream` as an `Input[Byte]` */
 class ByteInput(in: InputStream) extends Input[Byte] {
   
-  private val bin = new BufferedInputStream(in)
+  private val bin = alloc[BufferedInputStream](in)
 
   // FIXME: This might be really slow
   def ready() = bin.available() > 0
@@ -92,7 +86,7 @@ class ByteInput(in: InputStream) extends Input[Byte] {
   * @param out The `java.io.OutputStream` to be wrapped */
 class ByteOutput(out: OutputStream) extends Output[Byte] {
   
-  private val bout = new BufferedOutputStream(out)
+  private val bout = alloc[BufferedOutputStream](out)
   
   def write(b: Byte) = bout.write(b)
   
@@ -115,7 +109,7 @@ class ByteOutput(out: OutputStream) extends Output[Byte] {
   * @param out The `java.io.Writer` to be wrapped */
 class CharOutput(out: java.io.Writer) extends Output[Char] {
   
-  private val bout = new BufferedWriter(out)
+  private val bout = alloc[BufferedWriter](out)
   
   def write(b: Char) = bout.write(b)
   def flush(): Unit = bout.flush()
@@ -137,7 +131,7 @@ class CharOutput(out: java.io.Writer) extends Output[Char] {
 class LineOutput(writer: java.io.Writer) extends Output[String] {
   def this(os: OutputStream, encoding: Encoding) =
     this(new OutputStreamWriter(os, encoding.name))
-  private val out = new BufferedWriter(writer)
+  private val out = alloc[BufferedWriter](writer)
 
   def write(s: String) = {
     out.write(s)
@@ -158,7 +152,7 @@ class LineOutput(writer: java.io.Writer) extends Output[String] {
 class LineInput(reader: java.io.Reader) extends Input[String] {
   def this(is: InputStream, encoding: Encoding) =
     this(new InputStreamReader(is, encoding.name))
-  private val in = new BufferedReader(reader)
+  private val in = alloc[BufferedReader](reader)
 
   def ready(): Boolean = in.ready()
 
@@ -171,36 +165,29 @@ class LineInput(reader: java.io.Reader) extends Input[String] {
 
 /** Type class object for creating an Input[Char] from a Java Reader */
 object ReaderBuilder extends InputBuilder[java.io.Reader, Char] {
-  def input(s: java.io.Reader)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Char], Exception] =
-    mode.wrap(new CharInput(s))
+  def input(s: java.io.Reader): Input[Char] = alloc[CharInput](s)
 }
 
 /** Type class object for creating an Input[String] from a Java Reader */
 object LineReaderBuilder extends InputBuilder[java.io.Reader, String] {
-  def input(s: java.io.Reader)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[String], Exception] =
-    mode.wrap(new LineInput(s))
+  def input(s: java.io.Reader): Input[String] = alloc[LineInput](s)
 }
 
 /** Type class object for creating an Output[Char] from a Java Writer */
 object WriterBuilder extends OutputBuilder[java.io.Writer, Char] {
-  def output(s: java.io.Writer)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Char], Exception] =
-    mode.wrap(new CharOutput(s))
+  def output(s: java.io.Writer): Output[Char] = alloc[CharOutput](s)
 }
 
 class JavaOutputStreamWriter[T](val getOutputStream: T => OutputStream) extends
     Writer[T, Byte] {
-  def output(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Byte], Exception] =
-    mode.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+  def output(t: T): Output[Byte] = alloc[ByteOutput](alloc[BufferedOutputStream](getOutputStream(t)))
 }
 
-class JavaOutputAppender[T](val getOutputStream: T => OutputStream) extends
-    Appender[T, Byte] {
-  def appendOutput(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Output[Byte], Exception] =
-    mode.wrap(new ByteOutput(new BufferedOutputStream(getOutputStream(t))))
+class JavaOutputAppender[T](val getOutputStream: T => OutputStream) extends Appender[T, Byte] {
+  def appendOutput(t: T): Output[Byte] = alloc[ByteOutput](alloc[BufferedOutputStream](getOutputStream(t)))
 }
 
 class JavaInputStreamReader[T](val getInputStream: T => InputStream) extends
     Reader[T, Byte] {
-  def input(t: T)(implicit mode: Mode[IoMethods]): mode.Wrap[Input[Byte], Exception] =
-    mode.wrap(new ByteInput(new BufferedInputStream(getInputStream(t))))
+  def input(t: T): Input[Byte] = alloc[ByteInput](alloc[BufferedInputStream](getInputStream(t)))
 }
