@@ -247,7 +247,7 @@ res: HttpUrl = http://www.example.com/src/app.scala
 This approach combines a lightweight syntax with compile-time parsing. When you write a
 `url` string-context literal, a macro is run at compile time which extracts the URL scheme
 from the string, finds the corresponding Scheme object, and invokes the `parse` method on
-the URL. This is how, in the example above, the compiler is able to proide accurate
+the URL. This is how, in the example above, the compiler is able to provide accurate
 return types like `FileUrl` and `HttpUrl`, based only on the part of the URL before the `:`.
 
 
